@@ -26,22 +26,15 @@ architecture uart_rx_arch of uart_rx is
     signal uart_baud_val: std_logic_vector(15 downto 0);
     
     signal baud_counter_tc:   std_logic;
-    signal baud_counter_clr:  std_logic;
-    signal baud_counter_en:   std_logic;
-    signal baud_counter_mode: std_logic;
-    signal baud_counter_val:  std_logic_vector(15 downto 0);
-    signal baud_counter_load: std_logic_vector(15 downto 0);
+    signal baud_counter_clr:    std_logic;
+    signal baud_counter_en:     std_logic;
+    signal baud_counter_mode:  std_logic;
+    signal baud_counter_val:   unsigned(15 downto 0);
     
     signal rx_counter_tc:   std_logic;
-    signal rx_counter_clr:  std_logic;
-    signal rx_counter_en:   std_logic;
-    signal rx_counter_val:  std_logic_vector(2 downto 0);
-    signal rx_counter_load: std_logic_vector(2 downto 0);
+    signal rx_counter_val:   unsigned(2 downto 0);
     
-    signal rx_sipo_clr: std_logic;
-    signal rx_sipo_en:  std_logic;
-    signal rx_sipo_ser: std_logic;
-    signal rx_sipo_val: std_logic_vector(7 downto 0);
+    signal rx_shift_reg: std_logic_vector(7 downto 0);
 
 begin
     
@@ -127,63 +120,61 @@ begin
 
     uart_baud_val <= baud_div;
 
-    baud_counter_load <= '0' & uart_baud_val(15 downto 1) when curr_state = RX_START else uart_baud_val;
-
-    baud_counter_tc   <= '1' when baud_counter_val = x"0000" else '0';
-
     baud_counter_clr  <= '1' when curr_state = START else '0';
-
-    baud_counter_en   <= '0' when curr_state = START else '1';
+    baud_counter_en  <= '0' when curr_state = START else '1';
 
     baud_counter_mode <= '1' when curr_state = IDLE or baud_counter_tc = '1' else '0';
 
-    baud_counter: down_counter generic map (
-        BITS => 16
-    ) port map (
-        clk  => clk,
-        clr  => baud_counter_clr,
-        en   => baud_counter_en,
-        mode => baud_counter_mode,
-        load => baud_counter_load,
-        val  => baud_counter_val
-    );
+    baud_counter: process(clk)
+    begin
+        if rising_edge(clk) then
+            if baud_counter_clr = '1' then
+                baud_counter_val <= unsigned(uart_baud_val);
+            elsif baud_counter_en = '1' then
+                if baud_counter_mode = '1' then
+                    if curr_state = RX_START then
+                        baud_counter_val <= unsigned('0' & uart_baud_val(15 downto 1));
+                    else
+                        baud_counter_val <= unsigned(uart_baud_val);
+                    end if;
+                elsif baud_counter_val = 0 then
+                    baud_counter_val <= unsigned(uart_baud_val);
+                else
+                    baud_counter_val <= baud_counter_val - 1;
+                end if;
+            end if;
+        end if;
+    end process baud_counter;
 
-    rx_counter_tc  <= '1' when rx_counter_val = b"000" else '0';
+    baud_counter_tc <= '1' when baud_counter_val = 0 else '0';
 
-    rx_counter_clr <= '1' when curr_state = START else '0';
+    rx_counter: process(clk)
+    begin
+        if rising_edge(clk) then
+            if curr_state = START then
+                rx_counter_val <= (others => '1');
+            elsif baud_counter_tc = '1' and curr_state = RX_DATA then
+                rx_counter_val <= rx_counter_val - 1;
+            end if;
+        end if;
+    end process rx_counter;
 
-    rx_counter_en  <= baud_counter_tc when curr_state = RX_DATA else '0';
+    rx_counter_tc <= '1' when rx_counter_val = 0 else '0';
 
-    rx_counter: down_counter generic map (
-        BITS => 3
-    ) port map (
-        clk  => clk,
-        clr  => rx_counter_clr,
-        en   => rx_counter_en,
-        mode => '0',
-        load => (others => '1'),
-        val  => rx_counter_val
-    );
-
-    rx_sipo_clr <= '1' when curr_state = START else '0';
-
-    rx_sipo_en  <= baud_counter_tc when curr_state = RX_START or curr_state = RX_DATA else '0';        
-    
-    rx_sipo_ser <= rx;
-
-    rx_sipo: sipo generic map (
-        BITS => 8
-    ) port map (
-        clk => clk,
-        clr => rx_sipo_clr,
-        en  => rx_sipo_en,
-        ser => rx_sipo_ser,
-        val => rx_sipo_val
-    );
+    rx_shift: process(clk)
+    begin
+        if rising_edge(clk) then
+            if curr_state = START then
+                rx_shift_reg <= (others => '1');
+            elsif baud_counter_tc = '1' and (curr_state = RX_START or curr_state = RX_DATA) then
+                rx_shift_reg <= rx & rx_shift_reg(7 downto 1);
+            end if;
+        end if;
+    end process rx_shift;
 
     wr <= '1' when curr_state = RX_STOP and next_state = IDLE else '0';
 
-    wr_data <= rx_sipo_val;
+    wr_data <= rx_shift_reg;
 
     busy <= '0' when curr_state = IDLE else '1';
     
