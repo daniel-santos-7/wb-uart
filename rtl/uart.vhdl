@@ -98,9 +98,9 @@ begin
         clk      => clk,
         reset    => reset,
         baud_div => baud_div,
-        wr       => rx_wr,
-        wr_en    => rx_wr_en,
-        wr_data  => rx_wr_data,
+        out_valid => rx_wr,
+        in_ready  => rx_wr_en,
+        out_data  => rx_wr_data,
         busy     => rx_busy,
         rx       => rx
     );

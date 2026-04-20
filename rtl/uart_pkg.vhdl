@@ -37,12 +37,12 @@ package uart_pkg is
 
     component uart_rx is
         port (
-            clk:      in  std_logic;
-            reset:    in  std_logic;
-            baud_div: in  std_logic_vector(15 downto 0);
-            wr:       out std_logic;
-            wr_en:    in  std_logic;
-            wr_data:  out std_logic_vector(7 downto 0);
+            clk:       in  std_logic;
+            reset:     in  std_logic;
+            baud_div:  in  std_logic_vector(15 downto 0);
+            out_valid: out std_logic;
+            in_ready: in  std_logic;
+            out_data: out std_logic_vector(7 downto 0);
             busy:     out std_logic;
             rx:       in  std_logic
         );

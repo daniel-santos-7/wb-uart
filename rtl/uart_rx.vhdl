@@ -8,9 +8,9 @@ entity uart_rx is
         clk:      in  std_logic;
         reset:    in  std_logic;
         baud_div: in  std_logic_vector(15 downto 0);
-        wr:       out std_logic;
-        wr_en:    in  std_logic;
-        wr_data:  out std_logic_vector(7 downto 0);
+        out_valid:       out std_logic;
+        in_ready:       in  std_logic;
+        out_data:        out std_logic_vector(7 downto 0);
         busy:     out std_logic;
         rx:       in  std_logic
     );
@@ -34,7 +34,7 @@ architecture rtl of uart_rx is
     signal rx_counter_val:   unsigned(2 downto 0);
     
     signal rx_shift_reg: std_logic_vector(7 downto 0);
-    signal wr_reg: std_logic;
+    signal out_valid_reg: std_logic;
     signal busy_reg: std_logic;
 
 begin
@@ -44,13 +44,13 @@ begin
         if rising_edge(clk) then
             if reset = '1' then
                 curr_state <= IDLE;
-                wr_reg <= '0';
+                out_valid_reg <= '0';
                 busy_reg <= '0';
             else
-                wr_reg <= '0';
+                out_valid_reg <= '0';
                 case curr_state is
                     when IDLE =>
-                        if wr_en = '1' and rx = '0' then
+                        if in_ready = '1' and rx = '0' then
                             curr_state <= RX_START;
                             busy_reg <= '1';
                         else
@@ -71,7 +71,7 @@ begin
                     when RX_STOP => 
                         if baud_counter_tc = '1' then
                             curr_state <= IDLE;
-                            wr_reg <= '1';
+                            out_valid_reg <= '1';
                             busy_reg <= '0';
                         else
                             curr_state <= RX_STOP;
@@ -131,8 +131,8 @@ begin
         end if;
     end process rx_shift;
 
-    wr <= wr_reg;
+    out_valid <= out_valid_reg;
     busy <= busy_reg;
-    wr_data <= rx_shift_reg;
+    out_data <= rx_shift_reg;
     
 end architecture rtl;
