@@ -176,7 +176,7 @@ begin
         if rising_edge(clk) then
             if curr_state = START then
                 rx_shift_reg <= (others => '1');
-            elsif baud_counter_tc = '1' and (curr_state = RX_START or curr_state = RX_DATA) then
+            elsif baud_counter_tc = '1' and curr_state = RX_DATA then
                 rx_shift_reg <= rx & rx_shift_reg(7 downto 1);
             end if;
         end if;
