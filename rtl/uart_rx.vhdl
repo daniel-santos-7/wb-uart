@@ -21,7 +21,6 @@ architecture uart_rx_arch of uart_rx is
     type state is (START, IDLE, RX_START, RX_DATA, RX_STOP);
 
     signal curr_state: state;
-    signal next_state: state;
 
     signal uart_baud_val: std_logic_vector(15 downto 0);
     
@@ -35,6 +34,10 @@ architecture uart_rx_arch of uart_rx is
     signal rx_counter_val:   unsigned(2 downto 0);
     
     signal rx_shift_reg: std_logic_vector(7 downto 0);
+    signal wr_reg: std_logic;
+    signal busy_reg: std_logic;
+    signal baud_counter_clr_reg: std_logic;
+    signal baud_counter_en_reg: std_logic;
 
 begin
     
@@ -46,82 +49,89 @@ begin
             if reset = '1' then
             
                 curr_state <= START;
+                wr_reg <= '0';
+                busy_reg <= '0';
+                baud_counter_clr_reg <= '1';
+                baud_counter_en_reg <= '0';
             
             else
-
-                curr_state <= next_state;
-
+            
+                wr_reg <= '0';
+                baud_counter_clr_reg <= '0';
+                baud_counter_en_reg <= '1';
+            
+                case curr_state is
+            
+                    when START =>
+                        
+                        curr_state <= IDLE;
+                        busy_reg <= '0';
+                        baud_counter_clr_reg <= '1';
+                        baud_counter_en_reg <= '0';
+                
+                    when IDLE =>
+                        
+                        if wr_en = '1' and rx = '0' then
+        
+                            curr_state <= RX_START;
+                            busy_reg <= '1';
+        
+                        else
+        
+                            curr_state <= IDLE;
+        
+                        end if;
+        
+                    when RX_START =>
+        
+                        if baud_counter_tc = '1' then
+                            
+                            curr_state <= RX_DATA;
+        
+                        else
+        
+                            curr_state <= RX_START;
+        
+                        end if;
+        
+                    when RX_DATA =>
+        
+                        if  baud_counter_tc = '1' and rx_counter_tc = '1' then
+                            
+                            curr_state <= RX_STOP;
+        
+                        else
+        
+                            curr_state <= RX_DATA;
+        
+                        end if;
+        
+                    when RX_STOP => 
+         
+                        if baud_counter_tc = '1' then
+                            
+                            curr_state <= IDLE;
+                            wr_reg <= '1';
+                            busy_reg <= '0';
+        
+                        else
+        
+                            curr_state <= RX_STOP;
+        
+                        end if;
+            
+                end case;
+        
             end if;
-
+    
         end if;
 
     end process fsm;
 
-    fsm_next_state: process(curr_state, wr_en, rx, baud_counter_tc, rx_counter_tc)
-    begin
-        
-        case curr_state is
-            
-            when START =>
-                
-                next_state <= IDLE;
-        
-            when IDLE =>
-                
-                if wr_en = '1' and rx = '0' then
-
-                    next_state <= RX_START;
-
-                else
-
-                    next_state <= IDLE;
-
-                end if;
-
-            when RX_START =>
-
-                if baud_counter_tc = '1' then
-                    
-                    next_state <= RX_DATA;
-
-                else
-
-                    next_state <= RX_START;
-
-                end if;
-
-            when RX_DATA =>
-
-                if  baud_counter_tc = '1' and rx_counter_tc = '1' then
-                    
-                    next_state <= RX_STOP;
-
-                else
-
-                    next_state <= RX_DATA;
-
-                end if;
-
-            when RX_STOP => 
-
-                if baud_counter_tc = '1' then
-                    
-                    next_state <= IDLE;
-
-                else
-
-                    next_state <= RX_STOP;
-
-                end if;
-        
-        end case;
-
-    end process fsm_next_state;
-
     uart_baud_val <= baud_div;
 
-    baud_counter_clr  <= '1' when curr_state = START else '0';
-    baud_counter_en  <= '0' when curr_state = START else '1';
+    baud_counter_clr  <= baud_counter_clr_reg;
+    baud_counter_en  <= baud_counter_en_reg;
 
     baud_counter_mode <= '1' when curr_state = IDLE or baud_counter_tc = '1' else '0';
 
@@ -172,10 +182,9 @@ begin
         end if;
     end process rx_shift;
 
-    wr <= '1' when curr_state = RX_STOP and next_state = IDLE else '0';
+    wr <= wr_reg;
+    busy <= busy_reg;
 
     wr_data <= rx_shift_reg;
-
-    busy <= '0' when curr_state = IDLE else '1';
     
 end architecture uart_rx_arch;
