@@ -22,32 +22,32 @@ architecture rtl of uart_rx is
 
     signal state_reg : state;
     
-    signal baud_counter_sel : std_logic;
-    signal baud_counter_mux : unsigned(15 downto 0);
+    signal baud_cnt_sel : std_logic;
+    signal baud_cnt_mux : unsigned(15 downto 0);
 
-    signal baud_counter_tc  : std_logic;
-    signal baud_counter_val : unsigned(15 downto 0);
+    signal baud_cnt_done  : std_logic;
+    signal baud_cnt_val : unsigned(15 downto 0);
     
-    signal rx_counter_tc  : std_logic;
-    signal rx_counter_val : unsigned(2 downto 0);
+    signal rx_cnt_done  : std_logic;
+    signal rx_cnt_val : unsigned(2 downto 0);
     
-    signal rx_shift_reg  : std_logic_vector(7 downto 0);
+    signal rx_data_reg  : std_logic_vector(7 downto 0);
     
-    signal out_valid_reg : std_logic;
+    signal valid_reg : std_logic;
     signal busy_reg      : std_logic;
 
 begin
     
-    -- Control FSM --
+    ----------------------- Control Logic (FSM) --------------------------
 
     fsm: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 state_reg <= RX_IDLE;
-                out_valid_reg <= '0';
+                valid_reg <= '0';
                 busy_reg <= '0';
-                baud_counter_sel <= '0';
+                baud_cnt_sel <= '0';
             else            
                 case state_reg is
                     when RX_IDLE =>
@@ -56,98 +56,99 @@ begin
                             busy_reg <= '1';
                         end if;
                     when RX_START =>
-                        if baud_counter_tc = '1' then
+                        if baud_cnt_done = '1' then
                             if rx_i = '1' then
                                 state_reg <= RX_IDLE;
                                 busy_reg <= '0';
-                                baud_counter_sel <= '0';
+                                baud_cnt_sel <= '0';
                             else
                                 state_reg <= RX_DATA;
-                                baud_counter_sel <= '1';
+                                baud_cnt_sel <= '1';
                             end if;
                         end if;
                     when RX_DATA =>
-                        if  baud_counter_tc = '1' and rx_counter_tc = '1' then
+                        if  baud_cnt_done = '1' and rx_cnt_done = '1' then
                             state_reg <= RX_STOP;
                         end if;
                     when RX_STOP => 
-                        if baud_counter_tc = '1' then
+                        if baud_cnt_done = '1' then
                             if rx_i = '1' and ready_i = '1' then
                                 state_reg <= RX_WRITE;
-                                out_valid_reg <= '1';
+                                valid_reg <= '1';
                                 busy_reg <= '0';
-                                baud_counter_sel <= '0';
+                                baud_cnt_sel <= '0';
                             else
                                 state_reg <= RX_IDLE;
                                 busy_reg <= '0';
-                                baud_counter_sel <= '0';
+                                baud_cnt_sel <= '0';
                             end if;
                         end if;
                     when RX_WRITE =>
                         state_reg <= RX_IDLE;
-                        out_valid_reg <= '0';
+                        valid_reg <= '0';
                         busy_reg <= '0';
-                        baud_counter_sel <= '0';
+                        baud_cnt_sel <= '0';
                 end case;
             end if;
         end if;
     end process fsm;
 
-    -- Datapath --
+    ----------------------- Datapath Logic -----------------------------
 
-    baud_counter_mux_proc: process(baud_counter_sel, baud_div_i)
+    baud_cnt_mux_proc: process(baud_cnt_sel, baud_div_i)
     begin
-        if baud_counter_sel = '0' then
-            baud_counter_mux <= unsigned('0' & baud_div_i(15 downto 1));
+        if baud_cnt_sel = '0' then
+            baud_cnt_mux <= unsigned('0' & baud_div_i(15 downto 1));
         else
-            baud_counter_mux <= unsigned(baud_div_i);
+            baud_cnt_mux <= unsigned(baud_div_i);
         end if;
-    end process baud_counter_mux_proc;
+    end process baud_cnt_mux_proc;
 
     baud_counter: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' or busy_reg = '0' then
-                baud_counter_val <= (others => '0');
+                baud_cnt_val <= (others => '0');
             else
-                if baud_counter_tc = '1' then
-                    baud_counter_val <= (others => '0');
+                if baud_cnt_done = '1' then
+                    baud_cnt_val <= (others => '0');
                 else
-                    baud_counter_val <= baud_counter_val + 1;
+                    baud_cnt_val <= baud_cnt_val + 1;
                 end if;
             end if;
         end if;
     end process baud_counter;
 
-    baud_counter_tc <= '1' when baud_counter_val = baud_counter_mux - 1 else '0';
+    baud_cnt_done <= '1' when baud_cnt_val = baud_cnt_mux - 1 else '0';
 
     rx_counter: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                rx_counter_val <= (others => '0');
-            elsif baud_counter_tc = '1' and state_reg = RX_DATA then
-                rx_counter_val <= rx_counter_val + 1;
+                rx_cnt_val <= (others => '0');
+            elsif baud_cnt_done = '1' and state_reg = RX_DATA then
+                rx_cnt_val <= rx_cnt_val + 1;
             end if;
         end if;
     end process rx_counter;
 
-    rx_counter_tc <= '1' when rx_counter_val = 7 else '0';
+    rx_cnt_done <= '1' when rx_cnt_val = 7 else '0';
 
     rx_shift: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                rx_shift_reg <= (others => '0');
-            elsif baud_counter_tc = '1' and state_reg = RX_DATA then
-                rx_shift_reg <= rx_i & rx_shift_reg(7 downto 1);
+                rx_data_reg <= (others => '0');
+            elsif baud_cnt_done = '1' and state_reg = RX_DATA then
+                rx_data_reg <= rx_i & rx_data_reg(7 downto 1);
             end if;
         end if;
     end process rx_shift;
 
-    -- Output assignments --
-    valid_o <= out_valid_reg;
+    ------------------------------ Outputs  ------------------------------
+
+    valid_o <= valid_reg;
     busy_o <= busy_reg;
-    data_o <= rx_shift_reg;
+    data_o <= rx_data_reg;
     
 end architecture rtl;
