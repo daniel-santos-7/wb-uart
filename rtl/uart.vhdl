@@ -55,16 +55,31 @@ architecture uar_arch of uart is
     signal tx_busy:    std_logic;
     signal tx_rd_data: std_logic_vector(7 downto 0);
 
+    signal rx_sync : std_logic_vector(1 downto 0);
+
 begin
+
+    ----------------------- rx synchronization ---------------------------
+
+    rx_sync_proc: process(clk)
+    begin
+        if rising_edge(clk) then
+            if reset = '1' then
+                rx_sync <= (others => '1');
+            else
+                rx_sync <= rx & rx_sync(1);
+            end if;
+        end if;
+    end process rx_sync_proc;
 
     ------------------ baud rate divider register ------------------------
 
-    baud_div_reg: process(reset, clk)
+    baud_div_reg: process(clk)
     begin
-        if reset = '1' then
-            baud_div <= (others => '1');
-        elsif rising_edge(clk) then
-            if wr = '1' and wr_addr = BRDV_ADDR then
+        if rising_edge(clk) then
+            if reset = '1' then
+                baud_div <= (others => '1');
+            elsif wr = '1' and wr_addr = BRDV_ADDR then
                 baud_div <= wr_data;
             end if;
         end if;
@@ -102,7 +117,7 @@ begin
         in_ready  => rx_wr_en,
         out_data  => rx_wr_data,
         busy     => rx_busy,
-        rx       => rx
+        rx       => rx_sync(0)
     );
 
     ----------------------- transmitter buffer --------------------------

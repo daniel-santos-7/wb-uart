@@ -59,12 +59,12 @@ begin
 
     dat_o <= fifo_data(rd_pointer);
 
-    read_data: process(clk_i, rst_i)
+    read_data: process(clk_i)
     begin
-        if rst_i = '1' then
-            rd_pointer <= 0;
-        elsif rising_edge(clk_i) then
-            if rdy_i = '1' and empty = '0' then
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
+                rd_pointer <= 0;
+            elsif rdy_i = '1' and empty = '0' then
                 rd_pointer <= (rd_pointer + 1) mod FIFO_DEPTH;
             end if;
         end if;
@@ -72,13 +72,13 @@ begin
 
     ------------------------ write data on fifo --------------------------
 
-    write_data: process(clk_i, rst_i)
+    write_data: process(clk_i)
     begin
-        if rst_i = '1' then
-            fifo_data <= (others => (others => '0'));
-            wr_pointer <= 0;
-        elsif rising_edge(clk_i) then
-            if vld_i = '1' and full = '0' then
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
+                fifo_data <= (others => (others => '0'));
+                wr_pointer <= 0;
+            elsif vld_i = '1' and full = '0' then
                 fifo_data(wr_pointer) <= dat_i;
                 wr_pointer <= (wr_pointer + 1) mod FIFO_DEPTH;
             end if;
@@ -87,12 +87,12 @@ begin
 
     --------------------- last operation storage -------------------------
 
-    save_last_op: process(clk_i, rst_i)
+    save_last_op: process(clk_i)
     begin
-        if rst_i = '1' then
-            last_op <= READ_OP;
-        elsif rising_edge(clk_i) then
-            if rdy_i = '1' and vld_i = '0' then
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
+                last_op <= READ_OP;
+            elsif rdy_i = '1' and vld_i = '0' then
                 last_op <= READ_OP;
             elsif rdy_i = '0' and vld_i = '1' then
                 last_op <= WRITE_OP;
