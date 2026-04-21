@@ -5,132 +5,137 @@ use work.uart_pkg.all;
 
 entity uart_rx is
     port (
-        clk:      in  std_logic;
-        reset:    in  std_logic;
-        baud_div: in  std_logic_vector(15 downto 0);
-        out_valid:       out std_logic;
-        in_ready:       in  std_logic;
-        out_data:        out std_logic_vector(7 downto 0);
-        busy:     out std_logic;
-        rx:       in  std_logic
+        clk:       in  std_logic;
+        reset:     in  std_logic;
+        baud_div:  in  std_logic_vector(15 downto 0);
+        out_valid: out std_logic;
+        in_ready:  in  std_logic;
+        out_data:  out std_logic_vector(7 downto 0);
+        busy:      out std_logic;
+        rx:        in  std_logic
     );
 end entity uart_rx;
 
 architecture rtl of uart_rx is
 
-    type state is (IDLE, RX_START, RX_DATA, RX_STOP);
+    type state is (RX_IDLE, RX_START, RX_DATA, RX_STOP, RX_WRITE);
 
-    signal curr_state: state;
+    signal state_reg : state;
+    
+    signal baud_counter_sel : std_logic;
+    signal baud_counter_mux : unsigned(15 downto 0);
 
-    signal uart_baud_val: std_logic_vector(15 downto 0);
+    signal baud_counter_tc  : std_logic;
+    signal baud_counter_val : unsigned(15 downto 0);
     
-    signal baud_counter_tc:   std_logic;
-    signal baud_counter_clr:    std_logic;
-    signal baud_counter_en:     std_logic;
-    signal baud_counter_mode:  std_logic;
-    signal baud_counter_val:   unsigned(15 downto 0);
+    signal rx_counter_tc  : std_logic;
+    signal rx_counter_val : unsigned(2 downto 0);
     
-    signal rx_counter_tc:   std_logic;
-    signal rx_counter_val:   unsigned(2 downto 0);
+    signal rx_shift_reg  : std_logic_vector(7 downto 0);
     
-    signal rx_shift_reg: std_logic_vector(7 downto 0);
-    signal out_valid_reg: std_logic;
-    signal busy_reg: std_logic;
+    signal out_valid_reg : std_logic;
+    signal busy_reg      : std_logic;
 
 begin
     
+    -- Control FSM --
+
     fsm: process(clk)
     begin
         if rising_edge(clk) then
             if reset = '1' then
-                curr_state <= IDLE;
+                state_reg <= RX_IDLE;
                 out_valid_reg <= '0';
                 busy_reg <= '0';
-            else
-                out_valid_reg <= '0';
-                case curr_state is
-                    when IDLE =>
+                baud_counter_sel <= '0';
+            else            
+                case state_reg is
+                    when RX_IDLE =>
                         if in_ready = '1' and rx = '0' then
-                            curr_state <= RX_START;
+                            state_reg <= RX_START;
                             busy_reg <= '1';
-                        else
-                            curr_state <= IDLE;
                         end if;
                     when RX_START =>
-                        if baud_counter_tc = '1' then
-                            curr_state <= RX_DATA;
-                        else
-                            curr_state <= RX_START;
+                        if rx = '1' then
+                            state_reg <= RX_IDLE;
+                            busy_reg <= '0';
+                            baud_counter_sel <= '0';
+                        elsif baud_counter_tc = '1' then
+                            state_reg <= RX_DATA;
+                            baud_counter_sel <= '1';
                         end if;
                     when RX_DATA =>
                         if  baud_counter_tc = '1' and rx_counter_tc = '1' then
-                            curr_state <= RX_STOP;
-                        else
-                            curr_state <= RX_DATA;
+                            state_reg <= RX_STOP;
+                            baud_counter_sel <= '0';
                         end if;
                     when RX_STOP => 
                         if baud_counter_tc = '1' then
-                            curr_state <= IDLE;
+                            state_reg <= RX_WRITE;
                             out_valid_reg <= '1';
-                            busy_reg <= '0';
-                        else
-                            curr_state <= RX_STOP;
                         end if;
+                    when RX_WRITE =>
+                        state_reg <= RX_IDLE;
+                        out_valid_reg <= '0';
+                        busy_reg <= '0';
                 end case;
             end if;
         end if;
     end process fsm;
 
-    uart_baud_val <= baud_div;
-    baud_counter_mode <= '1' when curr_state = IDLE or baud_counter_tc = '1' else '0';
+    -- Datapath --
+
+    baud_counter_mux_proc: process(baud_counter_sel, baud_div)
+    begin
+        if baud_counter_sel = '0' then
+            baud_counter_mux <= unsigned('0' & baud_div(15 downto 1));
+        else
+            baud_counter_mux <= unsigned(baud_div);
+        end if;
+    end process baud_counter_mux_proc;
 
     baud_counter: process(clk)
     begin
         if rising_edge(clk) then
-            if reset = '1' then
+            if reset = '1' or busy_reg = '0' then
                 baud_counter_val <= (others => '0');
             else
-                if baud_counter_mode = '1' then
-                    if curr_state = RX_START then
-                        baud_counter_val <= unsigned('0' & uart_baud_val(15 downto 1));
-                    else
-                        baud_counter_val <= unsigned(uart_baud_val);
-                    end if;
-                elsif baud_counter_val = 0 then
-                    baud_counter_val <= unsigned(uart_baud_val);
+                if baud_counter_tc = '1' then
+                    baud_counter_val <= (others => '0');
                 else
-                    baud_counter_val <= baud_counter_val - 1;
+                    baud_counter_val <= baud_counter_val + 1;
                 end if;
             end if;
         end if;
     end process baud_counter;
 
-    baud_counter_tc <= '1' when baud_counter_val = 0 else '0';
+    baud_counter_tc <= '1' when baud_counter_val = baud_counter_mux else '0';
 
     rx_counter: process(clk)
     begin
         if rising_edge(clk) then
             if reset = '1' then
-                rx_counter_val <= (others => '1');
-            elsif baud_counter_tc = '1' and curr_state = RX_DATA then
-                rx_counter_val <= rx_counter_val - 1;
+                rx_counter_val <= (others => '0');
+            elsif baud_counter_tc = '1' and state_reg = RX_DATA then
+                rx_counter_val <= rx_counter_val + 1;
             end if;
         end if;
     end process rx_counter;
 
-    rx_counter_tc <= '1' when rx_counter_val = 0 else '0';
+    rx_counter_tc <= '1' when rx_counter_val = 7 else '0';
 
     rx_shift: process(clk)
     begin
         if rising_edge(clk) then
             if reset = '1' then
                 rx_shift_reg <= (others => '0');
-            elsif baud_counter_tc = '1' and curr_state = RX_DATA then
+            elsif baud_counter_tc = '1' and state_reg = RX_DATA then
                 rx_shift_reg <= rx & rx_shift_reg(7 downto 1);
             end if;
         end if;
     end process rx_shift;
 
+    -- Output assignments --
     out_valid <= out_valid_reg;
     busy <= busy_reg;
     out_data <= rx_shift_reg;
