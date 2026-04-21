@@ -6,13 +6,14 @@ use work.uart_pkg.all;
 
 entity uart_tx is
     port (
-        clk_i: in  std_logic;
-        rst_i: in  std_logic;
-        div_i: in  std_logic_vector(15 downto 0);
-        vld_i: in  std_logic;
-        dat_i: in  std_logic_vector(7 downto 0);
-        rdy_o: out std_logic;
-        tx_o:  out std_logic
+        clk_i:  in  std_logic;
+        rst_i:  in  std_logic;
+        div_i:  in  std_logic_vector(15 downto 0);
+        vld_i:  in  std_logic;
+        dat_i:  in  std_logic_vector(7 downto 0);
+        rdy_o:  out std_logic;
+        busy_o: out std_logic;
+        tx_o:   out std_logic
     );
 end entity uart_tx;
 
@@ -139,6 +140,7 @@ begin
     ------------------------------ Outputs  ------------------------------
 
     rdy_o <= rdy_reg;
+    busy_o <= not rdy_reg;
     tx_o <= tx_reg;
 
 end architecture rtl;

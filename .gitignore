@@ -1,6 +1,9 @@
 .import
 .make
+.analyze
 uart_tb
 e~uart_tb.o
-waves
-work
+waves/
+work/
+syn/
+*.ghw
