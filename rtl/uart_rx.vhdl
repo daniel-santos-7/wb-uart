@@ -51,33 +51,43 @@ begin
             else            
                 case state_reg is
                     when RX_IDLE =>
-                        if in_ready = '1' and rx = '0' then
+                        if rx = '0' then
                             state_reg <= RX_START;
                             busy_reg <= '1';
                         end if;
                     when RX_START =>
-                        if rx = '1' then
-                            state_reg <= RX_IDLE;
-                            busy_reg <= '0';
-                            baud_counter_sel <= '0';
-                        elsif baud_counter_tc = '1' then
-                            state_reg <= RX_DATA;
-                            baud_counter_sel <= '1';
+                        if baud_counter_tc = '1' then
+                            if rx = '1' then
+                                state_reg <= RX_IDLE;
+                                busy_reg <= '0';
+                                baud_counter_sel <= '0';
+                            else
+                                state_reg <= RX_DATA;
+                                baud_counter_sel <= '1';
+                            end if;
                         end if;
                     when RX_DATA =>
                         if  baud_counter_tc = '1' and rx_counter_tc = '1' then
                             state_reg <= RX_STOP;
-                            baud_counter_sel <= '0';
                         end if;
                     when RX_STOP => 
                         if baud_counter_tc = '1' then
-                            state_reg <= RX_WRITE;
-                            out_valid_reg <= '1';
+                            if rx = '1' and in_ready = '1' then
+                                state_reg <= RX_WRITE;
+                                out_valid_reg <= '1';
+                                busy_reg <= '0';
+                                baud_counter_sel <= '0';
+                            else
+                                state_reg <= RX_IDLE;
+                                busy_reg <= '0';
+                                baud_counter_sel <= '0';
+                            end if;
                         end if;
                     when RX_WRITE =>
                         state_reg <= RX_IDLE;
                         out_valid_reg <= '0';
                         busy_reg <= '0';
+                        baud_counter_sel <= '0';
                 end case;
             end if;
         end if;
@@ -109,7 +119,7 @@ begin
         end if;
     end process baud_counter;
 
-    baud_counter_tc <= '1' when baud_counter_val = baud_counter_mux else '0';
+    baud_counter_tc <= '1' when baud_counter_val = baud_counter_mux - 1 else '0';
 
     rx_counter: process(clk)
     begin
