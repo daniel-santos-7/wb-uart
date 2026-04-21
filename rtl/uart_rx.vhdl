@@ -5,14 +5,14 @@ use work.uart_pkg.all;
 
 entity uart_rx is
     port (
-        clk:       in  std_logic;
-        reset:     in  std_logic;
-        baud_div:  in  std_logic_vector(15 downto 0);
-        out_valid: out std_logic;
-        in_ready:  in  std_logic;
-        out_data:  out std_logic_vector(7 downto 0);
-        busy:      out std_logic;
-        rx:        in  std_logic
+        clk_i:      in  std_logic;
+        rst_i:      in  std_logic;
+        baud_div_i: in  std_logic_vector(15 downto 0);
+        valid_o:    out std_logic;
+        ready_i:    in  std_logic;
+        data_o:     out std_logic_vector(7 downto 0);
+        busy_o:     out std_logic;
+        rx_i:       in  std_logic
     );
 end entity uart_rx;
 
@@ -40,10 +40,10 @@ begin
     
     -- Control FSM --
 
-    fsm: process(clk)
+    fsm: process(clk_i)
     begin
-        if rising_edge(clk) then
-            if reset = '1' then
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
                 state_reg <= RX_IDLE;
                 out_valid_reg <= '0';
                 busy_reg <= '0';
@@ -51,13 +51,13 @@ begin
             else            
                 case state_reg is
                     when RX_IDLE =>
-                        if rx = '0' then
+                        if rx_i = '0' then
                             state_reg <= RX_START;
                             busy_reg <= '1';
                         end if;
                     when RX_START =>
                         if baud_counter_tc = '1' then
-                            if rx = '1' then
+                            if rx_i = '1' then
                                 state_reg <= RX_IDLE;
                                 busy_reg <= '0';
                                 baud_counter_sel <= '0';
@@ -72,7 +72,7 @@ begin
                         end if;
                     when RX_STOP => 
                         if baud_counter_tc = '1' then
-                            if rx = '1' and in_ready = '1' then
+                            if rx_i = '1' and ready_i = '1' then
                                 state_reg <= RX_WRITE;
                                 out_valid_reg <= '1';
                                 busy_reg <= '0';
@@ -95,19 +95,19 @@ begin
 
     -- Datapath --
 
-    baud_counter_mux_proc: process(baud_counter_sel, baud_div)
+    baud_counter_mux_proc: process(baud_counter_sel, baud_div_i)
     begin
         if baud_counter_sel = '0' then
-            baud_counter_mux <= unsigned('0' & baud_div(15 downto 1));
+            baud_counter_mux <= unsigned('0' & baud_div_i(15 downto 1));
         else
-            baud_counter_mux <= unsigned(baud_div);
+            baud_counter_mux <= unsigned(baud_div_i);
         end if;
     end process baud_counter_mux_proc;
 
-    baud_counter: process(clk)
+    baud_counter: process(clk_i)
     begin
-        if rising_edge(clk) then
-            if reset = '1' or busy_reg = '0' then
+        if rising_edge(clk_i) then
+            if rst_i = '1' or busy_reg = '0' then
                 baud_counter_val <= (others => '0');
             else
                 if baud_counter_tc = '1' then
@@ -121,10 +121,10 @@ begin
 
     baud_counter_tc <= '1' when baud_counter_val = baud_counter_mux - 1 else '0';
 
-    rx_counter: process(clk)
+    rx_counter: process(clk_i)
     begin
-        if rising_edge(clk) then
-            if reset = '1' then
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
                 rx_counter_val <= (others => '0');
             elsif baud_counter_tc = '1' and state_reg = RX_DATA then
                 rx_counter_val <= rx_counter_val + 1;
@@ -134,20 +134,20 @@ begin
 
     rx_counter_tc <= '1' when rx_counter_val = 7 else '0';
 
-    rx_shift: process(clk)
+    rx_shift: process(clk_i)
     begin
-        if rising_edge(clk) then
-            if reset = '1' then
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
                 rx_shift_reg <= (others => '0');
             elsif baud_counter_tc = '1' and state_reg = RX_DATA then
-                rx_shift_reg <= rx & rx_shift_reg(7 downto 1);
+                rx_shift_reg <= rx_i & rx_shift_reg(7 downto 1);
             end if;
         end if;
     end process rx_shift;
 
     -- Output assignments --
-    out_valid <= out_valid_reg;
-    busy <= busy_reg;
-    out_data <= rx_shift_reg;
+    valid_o <= out_valid_reg;
+    busy_o <= busy_reg;
+    data_o <= rx_shift_reg;
     
 end architecture rtl;

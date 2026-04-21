@@ -1,0 +1,6 @@
+.import
+.make
+uart_tb
+e~uart_tb.o
+waves
+work

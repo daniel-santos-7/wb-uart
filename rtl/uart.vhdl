@@ -110,14 +110,14 @@ begin
     rx_fifo_wr_data <= rx_wr_data;
 
     receiver: uart_rx port map (
-        clk      => clk,
-        reset    => reset,
-        baud_div => baud_div,
-        out_valid => rx_wr,
-        in_ready  => rx_wr_en,
-        out_data  => rx_wr_data,
-        busy     => rx_busy,
-        rx       => rx_sync(0)
+        clk_i      => clk,
+        rst_i      => reset,
+        baud_div_i => baud_div,
+        valid_o    => rx_wr,
+        ready_i    => rx_wr_en,
+        data_o     => rx_wr_data,
+        busy_o     => rx_busy,
+        rx_i       => rx_sync(0)
     );
 
     ----------------------- transmitter buffer --------------------------
