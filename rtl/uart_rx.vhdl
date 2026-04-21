@@ -26,15 +26,15 @@ architecture rtl of uart_rx is
     signal baud_cnt_mux : unsigned(15 downto 0);
 
     signal baud_cnt_done  : std_logic;
-    signal baud_cnt_val : unsigned(15 downto 0);
+    signal baud_cnt_reg : unsigned(15 downto 0);
     
     signal rx_cnt_done  : std_logic;
-    signal rx_cnt_val : unsigned(2 downto 0);
+    signal rx_cnt_reg : unsigned(2 downto 0);
     
-    signal rx_data_reg  : std_logic_vector(7 downto 0);
+    signal data_reg  : std_logic_vector(7 downto 0);
     
     signal valid_reg : std_logic;
-    signal busy_reg      : std_logic;
+    signal busy_reg  : std_logic;
 
 begin
     
@@ -108,39 +108,39 @@ begin
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' or busy_reg = '0' then
-                baud_cnt_val <= (others => '0');
+                baud_cnt_reg <= (others => '0');
             else
                 if baud_cnt_done = '1' then
-                    baud_cnt_val <= (others => '0');
+                    baud_cnt_reg <= (others => '0');
                 else
-                    baud_cnt_val <= baud_cnt_val + 1;
+                    baud_cnt_reg <= baud_cnt_reg + 1;
                 end if;
             end if;
         end if;
     end process baud_counter;
 
-    baud_cnt_done <= '1' when baud_cnt_val = baud_cnt_mux - 1 else '0';
+    baud_cnt_done <= '1' when baud_cnt_reg = baud_cnt_mux - 1 else '0';
 
     rx_counter: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                rx_cnt_val <= (others => '0');
+                rx_cnt_reg <= (others => '0');
             elsif baud_cnt_done = '1' and state_reg = RX_DATA then
-                rx_cnt_val <= rx_cnt_val + 1;
+                rx_cnt_reg <= rx_cnt_reg + 1;
             end if;
         end if;
     end process rx_counter;
 
-    rx_cnt_done <= '1' when rx_cnt_val = 7 else '0';
+    rx_cnt_done <= '1' when rx_cnt_reg = 7 else '0';
 
     rx_shift: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                rx_data_reg <= (others => '0');
+                data_reg <= (others => '0');
             elsif baud_cnt_done = '1' and state_reg = RX_DATA then
-                rx_data_reg <= rx_i & rx_data_reg(7 downto 1);
+                data_reg <= rx_i & data_reg(7 downto 1);
             end if;
         end if;
     end process rx_shift;
@@ -149,6 +149,6 @@ begin
 
     valid_o <= valid_reg;
     busy_o <= busy_reg;
-    data_o <= rx_data_reg;
+    data_o <= data_reg;
     
 end architecture rtl;
