@@ -34,9 +34,8 @@ architecture rtl of uart_tx is
     signal rdy_reg : std_logic;
     signal tx_reg  : std_logic;
 
-    signal baud_cnt_en : std_logic;
-    signal tx_cnt_en : std_logic;
-    signal data_reg_en : std_logic;
+    signal baud_cnt_en_reg : std_logic;
+    signal tx_data_en_reg  : std_logic;
 
     signal baud_cnt_reg : unsigned(15 downto 0);
     signal tx_cnt_reg   : unsigned(2 downto 0);
@@ -58,6 +57,8 @@ begin
                 state_reg <= IDLE;
                 rdy_reg <= '1';
                 tx_reg <= '1';
+                baud_cnt_en_reg <= '0';
+                tx_data_en_reg <= '0';
             else
                 case state_reg is
                     when IDLE =>
@@ -65,17 +66,20 @@ begin
                             state_reg <= TX_START;
                             rdy_reg <= '0';
                             tx_reg <= '0';
+                            baud_cnt_en_reg <= '1';
                         end if;
                     when TX_START =>
                         if baud_cnt_done = '1' then
                             state_reg <= TX_DATA;
                             tx_reg <= data_reg(to_integer(tx_cnt_reg));
+                            tx_data_en_reg <= '1';
                         end if;
                     when TX_DATA =>
                         if baud_cnt_done = '1' then
                             if tx_cnt_done = '1' then
                                 state_reg <= TX_STOP;
                                 tx_reg <= '1';
+                                tx_data_en_reg <= '0';
                             else
                                 tx_reg <= data_reg(to_integer(next_tx_cnt));
                             end if;
@@ -85,15 +89,12 @@ begin
                             state_reg <= IDLE;
                             rdy_reg <= '1';
                             tx_reg <= '1';
+                            baud_cnt_en_reg <= '0';
                         end if;
                 end case;
             end if;
         end if;
     end process state_reg_proc;
-
-    baud_cnt_en <= '0' when state_reg = IDLE else '1';
-    tx_cnt_en <= baud_cnt_done when state_reg = TX_DATA else '0';
-    data_reg_en <= vld_i when state_reg = IDLE else '0';
 
     ----------------------- Datapath Logic -----------------------------
 
@@ -102,7 +103,7 @@ begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 baud_cnt_reg <= (others => '0');
-            elsif baud_cnt_en = '1' then
+            elsif baud_cnt_en_reg = '1' then
                 if baud_cnt_done = '1' then
                     baud_cnt_reg <= (others => '0');
                 else
@@ -117,7 +118,7 @@ begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 tx_cnt_reg <= (others => '0');
-            elsif tx_cnt_en = '1' then
+            elsif baud_cnt_done = '1' and tx_data_en_reg = '1' then
                 if tx_cnt_done = '1' then
                     tx_cnt_reg <= (others => '0');
                 else
@@ -134,7 +135,7 @@ begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 data_reg <= (others => '0');
-            elsif data_reg_en = '1' then
+            elsif vld_i = '1' and rdy_reg = '1' then
                 data_reg <= dat_i;
             end if;
         end if;
