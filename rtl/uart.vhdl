@@ -112,12 +112,12 @@ begin
     receiver: uart_rx port map (
         clk_i      => clk,
         rst_i      => reset,
-        baud_div_i => baud_div,
-        valid_o    => rx_wr,
+        rx_i       => rx_sync(0),
         ready_i    => rx_wr_en,
-        data_o     => rx_wr_data,
+        baud_div_i => baud_div,
         busy_o     => rx_busy,
-        rx_i       => rx_sync(0)
+        valid_o    => rx_wr,
+        data_o     => rx_wr_data
     );
 
     ----------------------- transmitter buffer --------------------------

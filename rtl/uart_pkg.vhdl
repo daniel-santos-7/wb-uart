@@ -40,12 +40,12 @@ package uart_pkg is
         port (
             clk_i:      in  std_logic;
             rst_i:      in  std_logic;
-            baud_div_i: in  std_logic_vector(15 downto 0);
-            valid_o:    out std_logic;
+            rx_i:       in  std_logic;
             ready_i:    in  std_logic;
-            data_o:     out std_logic_vector(7 downto 0);
+            baud_div_i: in  std_logic_vector(15 downto 0);
             busy_o:     out std_logic;
-            rx_i:       in  std_logic
+            valid_o:    out std_logic;
+            data_o:     out std_logic_vector(7 downto 0)
         );
     end component uart_rx;
 
