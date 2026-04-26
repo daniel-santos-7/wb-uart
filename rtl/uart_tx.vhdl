@@ -1,5 +1,11 @@
+----------------------------------------------------------------------
+-- Wishbone UART
+-- developed by: Daniel Santos
+-- module: uart_tx
+-- description: UART transmitter
+----------------------------------------------------------------------
+
 library IEEE;
-library work;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 use work.uart_pkg.all;
@@ -32,14 +38,14 @@ architecture rtl of uart_tx is
     signal tx_cnt_en : std_logic;
     signal data_reg_en : std_logic;
 
-    signal baud_cnt : unsigned(15 downto 0);
-    signal tx_cnt : unsigned(2 downto 0);
-    signal next_tx_cnt : unsigned(2 downto 0);
+    signal baud_cnt_reg : unsigned(15 downto 0);
+    signal tx_cnt_reg   : unsigned(2 downto 0);
+    signal next_tx_cnt  : unsigned(2 downto 0);
 
     signal data_reg : std_logic_vector(7 downto 0);
 
     signal baud_cnt_done : std_logic;
-    signal tx_cnt_done : std_logic;
+    signal tx_cnt_done   : std_logic;
 
 begin
 
@@ -63,7 +69,7 @@ begin
                     when TX_START =>
                         if baud_cnt_done = '1' then
                             state_reg <= TX_DATA;
-                            tx_reg <= data_reg(to_integer(tx_cnt));
+                            tx_reg <= data_reg(to_integer(tx_cnt_reg));
                         end if;
                     when TX_DATA =>
                         if baud_cnt_done = '1' then
@@ -95,12 +101,12 @@ begin
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                baud_cnt <= (others => '0');
+                baud_cnt_reg <= (others => '0');
             elsif baud_cnt_en = '1' then
                 if baud_cnt_done = '1' then
-                    baud_cnt <= (others => '0');
+                    baud_cnt_reg <= (others => '0');
                 else
-                    baud_cnt <= (baud_cnt + 1);
+                    baud_cnt_reg <= (baud_cnt_reg + 1);
                 end if;
             end if;
         end if;
@@ -110,18 +116,18 @@ begin
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                tx_cnt <= (others => '0');
+                tx_cnt_reg <= (others => '0');
             elsif tx_cnt_en = '1' then
                 if tx_cnt_done = '1' then
-                    tx_cnt <= (others => '0');
+                    tx_cnt_reg <= (others => '0');
                 else
-                    tx_cnt <= next_tx_cnt;
+                    tx_cnt_reg <= next_tx_cnt;
                 end if;
             end if;
         end if;
     end process tx_cnt_proc;
 
-    next_tx_cnt <= tx_cnt + 1;
+    next_tx_cnt <= tx_cnt_reg + 1;
 
     data_reg_proc: process(clk_i)
     begin
@@ -134,8 +140,8 @@ begin
         end if;
     end process data_reg_proc;
 
-    baud_cnt_done <= '1' when baud_cnt = (unsigned(div_i) - 1) else '0';
-    tx_cnt_done <= '1' when tx_cnt = TX_COUNTER_MAX else '0';
+    baud_cnt_done <= '1' when baud_cnt_reg = (unsigned(div_i) - 1) else '0';
+    tx_cnt_done <= '1' when tx_cnt_reg = TX_COUNTER_MAX else '0';
 
     ------------------------------ Outputs  ------------------------------
 
