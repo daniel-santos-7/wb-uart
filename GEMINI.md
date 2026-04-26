@@ -1,6 +1,6 @@
 # WB-UART Project Overview
 
-This project implements a robust, synthesizable UART (Universal Asynchronous Receiver-Transmitter) IP core in VHDL-93, featuring a Wishbone B3 compatible slave interface. It includes configurable baud rates and integrated FIFOs for efficient data handling.
+This project implements a simple and robust, synthesizable UART (Universal Asynchronous Receiver-Transmitter) IP core in VHDL-93, featuring a Wishbone B3 compatible slave interface. It focuses on a lightweight implementation with configurable baud rates and integrated FIFOs for efficient data handling.
 
 ## Technology Stack
 - **Language:** VHDL-93

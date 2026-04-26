@@ -1,10 +1,11 @@
-# WB-UART: Wishbone UART IP Core
+# WB-UART: Simple & Robust UART IP Core
 
-A robust, synthesizable UART (Universal Asynchronous Receiver-Transmitter) IP core written in VHDL-93, featuring a Wishbone B3 compatible slave interface.
+A simple and robust, synthesizable UART (Universal Asynchronous Receiver-Transmitter) IP core written in VHDL-93, featuring a Wishbone B3 compatible slave interface.
 
 ## Key Features
 
 - **Standard Interface:** Wishbone Slave (B3) compatible.
+- **Minimal Footprint:** Optimized for low resource usage while maintaining high reliability.
 - **Configurable Baud Rate:** 16-bit divider register for precise timing across various clock frequencies.
 - **Deep Buffering:** Integrated 8-byte synchronous FIFOs for both Transmit (TX) and Receive (RX) paths.
 - **Status Monitoring:** Real-time monitoring of FIFO states (full/empty) and UART busy flags via a dedicated status register.
