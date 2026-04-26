@@ -11,7 +11,8 @@ A robust, synthesizable UART (Universal Asynchronous Receiver-Transmitter) IP co
 - **Robust Receiver:** 
   - Two-stage synchronization for the `rx` input to prevent metastability.
   - Mid-bit sampling for start-bit validation and noise immunity.
-  - Framing error detection.
+  - Automatic discard of frames with stop-bit errors.
+- **Timing-Optimized Design:** Registered FSM control signals decouple state decoding from the datapath, improving $F_{max}$ and ensuring consistent timing across synthesis targets.
 - **Clean Architecture:** Fully synchronous reset design optimized for modern FPGAs.
 
 ## Register Map
