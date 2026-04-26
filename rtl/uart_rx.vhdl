@@ -1,3 +1,10 @@
+----------------------------------------------------------------------
+-- Wishbone UART
+-- developed by: Daniel Santos
+-- module: uart_rx
+-- description: UART receiver with mid-bit sampling
+----------------------------------------------------------------------
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
@@ -149,8 +156,8 @@ begin
 
     ------------------------------ Outputs  ------------------------------
 
-    valid_o <= valid_reg;
     busy_o <= baud_cnt_en_reg;
+    valid_o <= valid_reg;
     data_o <= rx_data_reg;
     
 end architecture rtl;
