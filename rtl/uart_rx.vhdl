@@ -16,7 +16,7 @@ entity uart_rx is
         rst_i:      in  std_logic;
         rx_i:       in  std_logic;
         ready_i:    in  std_logic;
-        baud_div_i: in  std_logic_vector(15 downto 0);
+        div_i:      in  std_logic_vector(15 downto 0);
         busy_o:     out std_logic;
         valid_o:    out std_logic;
         data_o:     out std_logic_vector(7 downto 0)
@@ -104,12 +104,12 @@ begin
 
     ----------------------- Datapath Logic -----------------------------
 
-    baud_cnt_mux_proc: process(baud_cnt_sel_reg, baud_div_i)
+    baud_cnt_mux_proc: process(baud_cnt_sel_reg, div_i)
     begin
         if baud_cnt_sel_reg = '0' then
-            baud_cnt_mux <= unsigned('0' & baud_div_i(15 downto 1));
+            baud_cnt_mux <= unsigned('0' & div_i(15 downto 1));
         else
-            baud_cnt_mux <= unsigned(baud_div_i);
+            baud_cnt_mux <= unsigned(div_i);
         end if;
     end process baud_cnt_mux_proc;
 

@@ -114,7 +114,7 @@ begin
         rst_i      => reset,
         rx_i       => rx_sync(0),
         ready_i    => rx_wr_en,
-        baud_div_i => baud_div,
+        div_i      => baud_div,
         busy_o     => rx_busy,
         valid_o    => rx_wr,
         data_o     => rx_wr_data

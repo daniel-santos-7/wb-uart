@@ -42,7 +42,7 @@ package uart_pkg is
             rst_i:      in  std_logic;
             rx_i:       in  std_logic;
             ready_i:    in  std_logic;
-            baud_div_i: in  std_logic_vector(15 downto 0);
+            div_i:      in  std_logic_vector(15 downto 0);
             busy_o:     out std_logic;
             valid_o:    out std_logic;
             data_o:     out std_logic_vector(7 downto 0)
