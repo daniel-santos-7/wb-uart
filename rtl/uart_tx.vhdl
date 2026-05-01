@@ -12,14 +12,14 @@ use work.uart_pkg.all;
 
 entity uart_tx is
     port (
-        clk_i:  in  std_logic;
-        rst_i:  in  std_logic;
-        div_i:  in  std_logic_vector(15 downto 0);
-        vld_i:  in  std_logic;
-        dat_i:  in  std_logic_vector(7 downto 0);
-        rdy_o:  out std_logic;
-        busy_o: out std_logic;
-        tx_o:   out std_logic
+        clk_i:   in  std_logic;
+        rst_i:   in  std_logic;
+        valid_i: in  std_logic;
+        data_i:  in  std_logic_vector(7 downto 0);
+        div_i:   in  std_logic_vector(15 downto 0);
+        tx_o:    out std_logic;
+        busy_o:  out std_logic;
+        ready_o: out std_logic
     );
 end entity uart_tx;
 
@@ -62,7 +62,7 @@ begin
             else
                 case state_reg is
                     when IDLE =>
-                        if vld_i = '1' then
+                        if valid_i = '1' then
                             state_reg <= TX_START;
                             rdy_reg <= '0';
                             tx_reg <= '0';
@@ -135,8 +135,8 @@ begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 data_reg <= (others => '0');
-            elsif vld_i = '1' and rdy_reg = '1' then
-                data_reg <= dat_i;
+            elsif valid_i = '1' and rdy_reg = '1' then
+                data_reg <= data_i;
             end if;
         end if;
     end process data_reg_proc;
@@ -146,7 +146,7 @@ begin
 
     ------------------------------ Outputs  ------------------------------
 
-    rdy_o <= rdy_reg;
+    ready_o <= rdy_reg;
     busy_o <= not rdy_reg;
     tx_o <= tx_reg;
 

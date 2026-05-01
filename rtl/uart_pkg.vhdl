@@ -25,14 +25,14 @@ package uart_pkg is
 
     component uart_tx is
         port (
-            clk_i:  in  std_logic;
-            rst_i:  in  std_logic;
-            div_i:  in  std_logic_vector(UART_BAUD_WIDTH-1 downto 0);
-            vld_i:  in  std_logic;
-            dat_i:  in  std_logic_vector(UART_DATA_WIDTH-1 downto 0);
-            rdy_o:  out std_logic;
-            busy_o: out std_logic;
-            tx_o:   out std_logic
+            clk_i:   in  std_logic;
+            rst_i:   in  std_logic;
+            valid_i: in  std_logic;
+            data_i:  in  std_logic_vector(7 downto 0);
+            div_i:   in  std_logic_vector(15 downto 0);
+            tx_o:    out std_logic;
+            busy_o:  out std_logic;
+            ready_o: out std_logic
         );
     end component uart_tx;
 

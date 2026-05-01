@@ -146,14 +146,14 @@ begin
     tx_rd_data <= tx_fifo_rd_data;
 
     transmitter: uart_tx port map (
-        clk_i  => clk,
-        rst_i  => reset,
-        div_i  => baud_div,
-        rdy_o  => tx_rd,
-        busy_o => tx_busy,
-        vld_i  => tx_rd_en,
-        dat_i  => tx_rd_data,
-        tx_o   => tx
+        clk_i   => clk,
+        rst_i   => reset,
+        div_i   => baud_div,
+        ready_o => tx_rd,
+        busy_o  => tx_busy,
+        valid_i => tx_rd_en,
+        data_i  => tx_rd_data,
+        tx_o    => tx
     );
 
     -------------------------- module status -----------------------------
