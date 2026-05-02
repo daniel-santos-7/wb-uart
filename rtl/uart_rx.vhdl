@@ -25,6 +25,8 @@ end entity uart_rx;
 
 architecture rtl of uart_rx is
 
+    constant RX_COUNTER_MAX : unsigned(2 downto 0) := (others => '1');
+
     type state is (RX_IDLE, RX_START, RX_DATA, RX_STOP, RX_WRITE);
 
     signal state_reg : state;
@@ -37,6 +39,7 @@ architecture rtl of uart_rx is
     signal baud_cnt_mux : unsigned(15 downto 0);
     signal baud_cnt_reg : unsigned(15 downto 0);
     signal rx_cnt_reg   : unsigned(2 downto 0);
+
     signal rx_data_reg  : std_logic_vector(7 downto 0);
     
     signal baud_cnt_done : std_logic;
@@ -136,12 +139,16 @@ begin
             if rst_i = '1' then
                 rx_cnt_reg <= (others => '0');
             elsif baud_cnt_done = '1' and rx_data_en_reg = '1' then
-                rx_cnt_reg <= rx_cnt_reg + 1;
+                if rx_cnt_done = '1' then
+                    rx_cnt_reg <= (others => '0');
+                else
+                    rx_cnt_reg <= (rx_cnt_reg + 1);
+                end if;
             end if;
         end if;
     end process rx_cnt_proc;
 
-    rx_cnt_done <= '1' when rx_cnt_reg = 7 else '0';
+    rx_cnt_done <= '1' when rx_cnt_reg = RX_COUNTER_MAX else '0';
 
     rx_shift_proc: process(clk_i)
     begin
