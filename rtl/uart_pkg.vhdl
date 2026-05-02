@@ -21,12 +21,14 @@ package uart_pkg is
         port (
             clk_i : in  std_logic;
             rst_i : in  std_logic;
-            vld_i : in  std_logic;
-            rdy_i : in  std_logic;
-            dat_i : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-            vld_o : out std_logic;
-            rdy_o : out std_logic;
-            dat_o : out std_logic_vector(DATA_WIDTH-1 downto 0)
+
+            valid_i : in  std_logic;
+            ready_i : in  std_logic;
+            data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+
+            valid_o : out std_logic;
+            ready_o : out std_logic;
+            data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0)
         );
     end component fifo;
 
@@ -72,10 +74,10 @@ package uart_pkg is
             baud_div_o : out std_logic_vector(15 downto 0);
             status_i   : in  std_logic_vector(5 downto 0);
             
-            tx_fifo_wr_o      : out std_logic;
-            tx_fifo_wr_data_o : out std_logic_vector(7 downto 0);
-            rx_fifo_rd_o      : out std_logic;
-            rx_fifo_rd_data_i : in  std_logic_vector(7 downto 0)
+            tx_valid_o : out std_logic;
+            tx_data_o  : out std_logic_vector(7 downto 0);
+            rx_ready_o : out std_logic;
+            rx_data_i  : in  std_logic_vector(7 downto 0)
         );
     end component uart_csrs;
 
@@ -87,10 +89,10 @@ package uart_pkg is
             baud_div_i : in  std_logic_vector(15 downto 0);
             status_o   : out std_logic_vector(5 downto 0);
             
-            tx_fifo_wr_i      : in  std_logic;
-            tx_fifo_wr_data_i : in  std_logic_vector(7 downto 0);
-            rx_fifo_rd_i      : in  std_logic;
-            rx_fifo_rd_data_o : out std_logic_vector(7 downto 0);
+            valid_i : in  std_logic;
+            data_i  : in  std_logic_vector(7 downto 0);
+            ready_i : in  std_logic;
+            data_o  : out std_logic_vector(7 downto 0);
 
             rx : in  std_logic;
             tx : out std_logic

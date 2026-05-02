@@ -31,10 +31,10 @@ architecture rtl of uart_wbsl is
     signal status   : std_logic_vector(5 downto 0);
     signal baud_div : std_logic_vector(15 downto 0);
 
-    signal tx_fifo_wr      : std_logic;
-    signal tx_fifo_wr_data : std_logic_vector(7 downto 0);
-    signal rx_fifo_rd      : std_logic;
-    signal rx_fifo_rd_data : std_logic_vector(7 downto 0);
+    signal tx_valid : std_logic;
+    signal tx_data  : std_logic_vector(7 downto 0);
+    signal rx_ready : std_logic;
+    signal rx_data  : std_logic_vector(7 downto 0);
 
 begin
 
@@ -55,25 +55,25 @@ begin
         baud_div_o => baud_div,
         status_i   => status,
         
-        tx_fifo_wr_o      => tx_fifo_wr,
-        tx_fifo_wr_data_o => tx_fifo_wr_data,
-        rx_fifo_rd_o      => rx_fifo_rd,
-        rx_fifo_rd_data_i => rx_fifo_rd_data
+        tx_valid_o => tx_valid,
+        tx_data_o  => tx_data,
+        rx_ready_o => rx_ready,
+        rx_data_i  => rx_data
     );
 
     ----------------------- Datapath Logic -----------------------------
 
     uart_inst: uart port map (
-        clk               => clk_i,
-        reset             => rst_i,
-        baud_div_i        => baud_div,
-        status_o          => status,
-        tx_fifo_wr_i      => tx_fifo_wr,
-        tx_fifo_wr_data_i => tx_fifo_wr_data,
-        rx_fifo_rd_i      => rx_fifo_rd,
-        rx_fifo_rd_data_o => rx_fifo_rd_data,
-        rx                => rx,
-        tx                => tx
+        clk        => clk_i,
+        reset      => rst_i,
+        baud_div_i => baud_div,
+        status_o   => status,
+        valid_i    => tx_valid,
+        data_i     => tx_data,
+        ready_i    => rx_ready,
+        data_o     => rx_data,
+        rx         => rx,
+        tx         => tx
     );
 
 end architecture rtl;

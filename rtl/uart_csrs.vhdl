@@ -27,11 +27,11 @@ entity uart_csrs is
         baud_div_o : out std_logic_vector(15 downto 0);
         status_i   : in  std_logic_vector(5 downto 0);
         
-        -- FIFO Interfaces
-        tx_fifo_wr_o      : out std_logic;
-        tx_fifo_wr_data_o : out std_logic_vector(7 downto 0);
-        rx_fifo_rd_o      : out std_logic;
-        rx_fifo_rd_data_i : in  std_logic_vector(7 downto 0)
+        -- Internal Data Interface
+        tx_valid_o : out std_logic;
+        tx_data_o  : out std_logic_vector(7 downto 0);
+        rx_ready_o : out std_logic;
+        rx_data_i  : in  std_logic_vector(7 downto 0)
     );
 end entity uart_csrs;
 
@@ -69,15 +69,15 @@ begin
 
     baud_div_o <= baud_div_reg;
 
-    tx_fifo_wr_o      <= '1' when wr_en = '1' and adr_i = TXRX_ADDR else '0';
-    tx_fifo_wr_data_o <= dat_i(7 downto 0);
-    rx_fifo_rd_o      <= '1' when rd_en = '1' and adr_i = TXRX_ADDR else '0';
+    tx_valid_o <= '1' when wr_en = '1' and adr_i = TXRX_ADDR else '0';
+    tx_data_o  <= dat_i(7 downto 0);
+    rx_ready_o <= '1' when rd_en = '1' and adr_i = TXRX_ADDR else '0';
 
     ------------------------------ Outputs ------------------------------
 
     ack_o <= stb_i and cyc_i;
 
-    rd_mux_proc: process(rd_en, adr_i, status_i, baud_div_reg, rx_fifo_rd_data_i)
+    rd_mux_proc: process(rd_en, adr_i, status_i, baud_div_reg, rx_data_i)
     begin
         if rd_en = '1' then
             case adr_i is
@@ -89,7 +89,7 @@ begin
                 when BRDV_ADDR =>
                     dat_o <= x"0000" & baud_div_reg;
                 when TXRX_ADDR =>
-                    dat_o(7 downto 0)   <= rx_fifo_rd_data_i;
+                    dat_o(7 downto 0)   <= rx_data_i;
                     dat_o(31 downto 8)  <= (others => '0');
                 when others =>
                     dat_o <= (others => '0');

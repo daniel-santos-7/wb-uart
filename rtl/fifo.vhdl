@@ -17,12 +17,14 @@ entity fifo is
     port (
         clk_i : in  std_logic;
         rst_i : in  std_logic;
-        vld_i : in  std_logic;
-        rdy_i : in  std_logic;
-        dat_i : in  std_logic_vector(DATA_WIDTH-1 downto 0);
-        vld_o : out std_logic;
-        rdy_o : out std_logic;
-        dat_o : out std_logic_vector(DATA_WIDTH-1 downto 0)
+
+        valid_i : in  std_logic;
+        ready_i : in  std_logic;
+        data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+
+        valid_o : out std_logic;
+        ready_o : out std_logic;
+        data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0)
     );
 end entity fifo;
 
@@ -46,14 +48,14 @@ begin
 
     ----------------------- Datapath Logic -----------------------------
 
-    dat_o <= fifo_data_reg(rd_ptr_reg);
+    data_o <= fifo_data_reg(rd_ptr_reg);
 
     read_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 rd_ptr_reg <= 0;
-            elsif rdy_i = '1' and empty = '0' then
+            elsif ready_i = '1' and empty = '0' then
                 rd_ptr_reg <= (rd_ptr_reg + 1) mod FIFO_DEPTH;
             end if;
         end if;
@@ -65,8 +67,8 @@ begin
             if rst_i = '1' then
                 fifo_data_reg <= (others => (others => '0'));
                 wr_ptr_reg <= 0;
-            elsif vld_i = '1' and full = '0' then
-                fifo_data_reg(wr_ptr_reg) <= dat_i;
+            elsif valid_i = '1' and full = '0' then
+                fifo_data_reg(wr_ptr_reg) <= data_i;
                 wr_ptr_reg <= (wr_ptr_reg + 1) mod FIFO_DEPTH;
             end if;
         end if;
@@ -77,9 +79,9 @@ begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 last_op_reg <= READ_OP;
-            elsif rdy_i = '1' and vld_i = '0' then
+            elsif ready_i = '1' and valid_i = '0' then
                 last_op_reg <= READ_OP;
-            elsif rdy_i = '0' and vld_i = '1' then
+            elsif ready_i = '0' and valid_i = '1' then
                 last_op_reg <= WRITE_OP;
             end if;
         end if;
@@ -92,7 +94,7 @@ begin
 
     ------------------------------ Outputs ------------------------------
 
-    vld_o <= not empty;
-    rdy_o <= not full;
+    valid_o <= not empty;
+    ready_o <= not full;
 
 end architecture rtl;
