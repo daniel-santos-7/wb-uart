@@ -1,3 +1,10 @@
+----------------------------------------------------------------------
+-- Wishbone UART
+-- developed by: Daniel Santos
+-- module: uart_tb
+-- description: system-level testbench
+----------------------------------------------------------------------
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
@@ -30,7 +37,9 @@ architecture tb of uart_tb is
 
 begin
 
-    uut: uart_wbsl port map (
+    ----------------------- Unit Under Test ----------------------------
+
+    uut_inst: uart_wbsl port map (
         clk_i => clk_i,
         rst_i => rst_i,
         dat_i => wb_bus.dat_o,
@@ -45,7 +54,11 @@ begin
         tx    => tx_o
     );
 
+    ----------------------- Clock Generation ---------------------------
+
     clk_i <= not clk_i after (CLK_PERIOD/2) when clk_en = '1' else '0';
+
+    ----------------------- Stimulus Processes -------------------------
 
     uart_rx_proc: process
     begin
@@ -69,21 +82,26 @@ begin
         wait until rising_edge(clk_i);
         rst_i <= '0';
 
+        -- Initial reads
         wb_read(b"00", wb_data, clk_i, wb_bus);
         wb_read(b"01", wb_data, clk_i, wb_bus);
         wb_read(b"10", wb_data, clk_i, wb_bus);
         wb_read(b"11", wb_data, clk_i, wb_bus);
 
+        -- Setup baud rate
         wb_write(b"10", std_logic_vector(UART_115200_BAUD_RATE_DIVIDER), clk_i, wb_bus);
 
+        -- Transmit data to UART line
         for i in test_data'range loop
             uart_transmit(rx_i, test_data(i));
         end loop;
 
+        -- Check received data via Wishbone
         for i in test_data'range loop
             wb_check(b"11", x"000000" & test_data(i), clk_i, wb_bus);
         end loop;
 
+        -- Write data via Wishbone (to be checked by uart_rx_proc)
         for i in test_data'range loop
             wb_write(b"11", x"000000" & test_data(i), clk_i, wb_bus);
         end loop;

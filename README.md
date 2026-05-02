@@ -42,7 +42,8 @@ The peripheral occupies a 2-bit address space (4 registers):
 
 - `rtl/`: Synthesizable VHDL source files.
   - `uart_wbsl.vhdl`: Wishbone Slave wrapper.
-  - `uart.vhdl`: Top-level core logic and register file.
+  - `uart.vhdl`: Top-level core logic.
+  - `uart_csrs.vhdl`: Control and Status Registers (CSRs).
   - `uart_tx.vhdl` / `uart_rx.vhdl`: Serializer and deserializer logic.
   - `fifo.vhdl`: Generic circular buffer implementation.
   - `uart_pkg.vhdl`: Component and constant declarations.

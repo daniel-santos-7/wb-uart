@@ -11,6 +11,7 @@ SYNDIR   = syn
 RTL_SRC = \
 	./rtl/uart_pkg.vhdl \
 	./rtl/fifo.vhdl \
+	./rtl/uart_csrs.vhdl \
 	./rtl/uart_rx.vhdl \
 	./rtl/uart_tx.vhdl \
 	./rtl/uart.vhdl \

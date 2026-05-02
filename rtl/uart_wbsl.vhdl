@@ -28,36 +28,52 @@ end entity uart_wbsl;
 
 architecture rtl of uart_wbsl is
 
-    signal rd_en : std_logic;
-    signal wr_en : std_logic;
+    signal status   : std_logic_vector(5 downto 0);
+    signal baud_div : std_logic_vector(15 downto 0);
 
-    signal rd_data : std_logic_vector(15 downto 0);
+    signal tx_fifo_wr      : std_logic;
+    signal tx_fifo_wr_data : std_logic_vector(7 downto 0);
+    signal rx_fifo_rd      : std_logic;
+    signal rx_fifo_rd_data : std_logic_vector(7 downto 0);
 
 begin
 
     ----------------------- Control Logic ----------------------------
 
-    rd_en <= stb_i and cyc_i and not we_i;
-    wr_en <= stb_i and cyc_i and we_i;
+    csrs_inst: uart_csrs port map (
+        clk_i   => clk_i,
+        rst_i   => rst_i,
+
+        cyc_i   => cyc_i,
+        stb_i   => stb_i,
+        we_i    => we_i,
+        adr_i   => adr_i,
+        dat_i   => dat_i,
+        dat_o   => dat_o,
+        ack_o   => ack_o,
+
+        baud_div_o => baud_div,
+        status_i   => status,
+        
+        tx_fifo_wr_o      => tx_fifo_wr,
+        tx_fifo_wr_data_o => tx_fifo_wr_data,
+        rx_fifo_rd_o      => rx_fifo_rd,
+        rx_fifo_rd_data_i => rx_fifo_rd_data
+    );
 
     ----------------------- Datapath Logic -----------------------------
 
     uart_inst: uart port map (
-        clk     => clk_i,
-        reset   => rst_i,
-        rd      => rd_en,
-        rd_addr => adr_i,
-        rd_data => rd_data,
-        wr      => wr_en,
-        wr_addr => adr_i,
-        wr_data => dat_i(15 downto 0),
-        rx      => rx,
-        tx      => tx
+        clk               => clk_i,
+        reset             => rst_i,
+        baud_div_i        => baud_div,
+        status_o          => status,
+        tx_fifo_wr_i      => tx_fifo_wr,
+        tx_fifo_wr_data_i => tx_fifo_wr_data,
+        rx_fifo_rd_i      => rx_fifo_rd,
+        rx_fifo_rd_data_o => rx_fifo_rd_data,
+        rx                => rx,
+        tx                => tx
     );
-
-    ------------------------------ Outputs ------------------------------
-
-    ack_o <= stb_i and cyc_i;
-    dat_o <= x"0000" & rd_data;
 
 end architecture rtl;

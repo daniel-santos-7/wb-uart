@@ -1,3 +1,10 @@
+----------------------------------------------------------------------
+-- Wishbone UART
+-- developed by: Daniel Santos
+-- module: uart_tb_pkg
+-- description: simulation helper procedures and models
+----------------------------------------------------------------------
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;

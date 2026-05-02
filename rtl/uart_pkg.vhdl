@@ -56,18 +56,41 @@ package uart_pkg is
         );
     end component uart_rx;
 
+    component uart_csrs is
+        port (
+            clk_i   : in  std_logic;
+            rst_i   : in  std_logic;
+
+            cyc_i : in  std_logic;
+            stb_i : in  std_logic;
+            we_i  : in  std_logic;
+            adr_i : in  std_logic_vector(1 downto 0);
+            dat_i : in  std_logic_vector(31 downto 0);
+            dat_o : out std_logic_vector(31 downto 0);
+            ack_o : out std_logic;
+
+            baud_div_o : out std_logic_vector(15 downto 0);
+            status_i   : in  std_logic_vector(5 downto 0);
+            
+            tx_fifo_wr_o      : out std_logic;
+            tx_fifo_wr_data_o : out std_logic_vector(7 downto 0);
+            rx_fifo_rd_o      : out std_logic;
+            rx_fifo_rd_data_i : in  std_logic_vector(7 downto 0)
+        );
+    end component uart_csrs;
+
     component uart is
         port (
-            clk   : in  std_logic;
-            reset : in  std_logic;
+            clk     : in  std_logic;
+            reset   : in  std_logic;
 
-            rd      : in  std_logic;
-            rd_addr : in  std_logic_vector(1 downto 0);
-            rd_data : out std_logic_vector(15 downto 0);
-
-            wr      : in  std_logic;
-            wr_addr : in  std_logic_vector(1 downto 0);
-            wr_data : in  std_logic_vector(15 downto 0);
+            baud_div_i : in  std_logic_vector(15 downto 0);
+            status_o   : out std_logic_vector(5 downto 0);
+            
+            tx_fifo_wr_i      : in  std_logic;
+            tx_fifo_wr_data_i : in  std_logic_vector(7 downto 0);
+            rx_fifo_rd_i      : in  std_logic;
+            rx_fifo_rd_data_o : out std_logic_vector(7 downto 0);
 
             rx : in  std_logic;
             tx : out std_logic
