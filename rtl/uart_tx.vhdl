@@ -27,19 +27,17 @@ architecture rtl of uart_tx is
 
     constant TX_COUNTER_MAX : unsigned(2 downto 0) := (others => '1');
 
-    type state_t is (IDLE, TX_START, TX_DATA, TX_STOP);
+    type state is (TX_IDLE, TX_READ, TX_START, TX_DATA, TX_STOP);
 
-    signal state_reg: state_t;
-
-    signal rdy_reg : std_logic;
-    signal tx_reg  : std_logic;
+    signal state_reg : state;
 
     signal baud_cnt_en_reg : std_logic;
     signal tx_data_en_reg  : std_logic;
+    signal ready_reg       : std_logic;
+    signal tx_reg          : std_logic;
 
     signal baud_cnt_reg : unsigned(15 downto 0);
     signal tx_cnt_reg   : unsigned(2 downto 0);
-    signal next_tx_cnt  : unsigned(2 downto 0);
 
     signal data_reg : std_logic_vector(7 downto 0);
 
@@ -50,28 +48,30 @@ begin
 
     ----------------------- Control Logic (FSM) --------------------------
 
-    state_reg_proc: process(clk_i)
+    fsm_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                state_reg <= IDLE;
-                rdy_reg <= '1';
+                state_reg <= TX_IDLE;
+                ready_reg <= '1';
                 tx_reg <= '1';
                 baud_cnt_en_reg <= '0';
                 tx_data_en_reg <= '0';
             else
                 case state_reg is
-                    when IDLE =>
+                    when TX_IDLE =>
                         if valid_i = '1' then
-                            state_reg <= TX_START;
-                            rdy_reg <= '0';
-                            tx_reg <= '0';
-                            baud_cnt_en_reg <= '1';
+                            state_reg <= TX_READ;
+                            ready_reg <= '0';
                         end if;
+                    when TX_READ =>
+                        state_reg <= TX_START;
+                        tx_reg <= '0';
+                        baud_cnt_en_reg <= '1';
                     when TX_START =>
                         if baud_cnt_done = '1' then
                             state_reg <= TX_DATA;
-                            tx_reg <= data_reg(to_integer(tx_cnt_reg));
+                            tx_reg <= data_reg(0);
                             tx_data_en_reg <= '1';
                         end if;
                     when TX_DATA =>
@@ -81,20 +81,20 @@ begin
                                 tx_reg <= '1';
                                 tx_data_en_reg <= '0';
                             else
-                                tx_reg <= data_reg(to_integer(next_tx_cnt));
+                                tx_reg <= data_reg(0);
                             end if;
                         end if;
                     when TX_STOP =>
                         if baud_cnt_done = '1' then
-                            state_reg <= IDLE;
-                            rdy_reg <= '1';
+                            state_reg <= TX_IDLE;
+                            ready_reg <= '1';
                             tx_reg <= '1';
                             baud_cnt_en_reg <= '0';
                         end if;
                 end case;
             end if;
         end if;
-    end process state_reg_proc;
+    end process fsm_proc;
 
     ----------------------- Datapath Logic -----------------------------
 
@@ -113,6 +113,8 @@ begin
         end if;
     end process baud_cnt_proc;
 
+    baud_cnt_done <= '1' when baud_cnt_reg = (unsigned(div_i) - 1) else '0';
+
     tx_cnt_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -122,32 +124,31 @@ begin
                 if tx_cnt_done = '1' then
                     tx_cnt_reg <= (others => '0');
                 else
-                    tx_cnt_reg <= next_tx_cnt;
+                    tx_cnt_reg <= (tx_cnt_reg + 1);
                 end if;
             end if;
         end if;
     end process tx_cnt_proc;
 
-    next_tx_cnt <= tx_cnt_reg + 1;
+    tx_cnt_done <= '1' when tx_cnt_reg = TX_COUNTER_MAX else '0';
 
     data_reg_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 data_reg <= (others => '0');
-            elsif valid_i = '1' and rdy_reg = '1' then
+            elsif valid_i = '1' and ready_reg = '1' then
                 data_reg <= data_i;
+            elsif baud_cnt_done = '1' and (tx_data_en_reg = '1' or state_reg = TX_START) then
+                data_reg <= '0' & data_reg(7 downto 1);
             end if;
         end if;
     end process data_reg_proc;
 
-    baud_cnt_done <= '1' when baud_cnt_reg = (unsigned(div_i) - 1) else '0';
-    tx_cnt_done <= '1' when tx_cnt_reg = TX_COUNTER_MAX else '0';
-
     ------------------------------ Outputs  ------------------------------
 
-    ready_o <= rdy_reg;
-    busy_o <= not rdy_reg;
     tx_o <= tx_reg;
+    busy_o <= baud_cnt_en_reg;
+    ready_o <= ready_reg;
 
 end architecture rtl;
