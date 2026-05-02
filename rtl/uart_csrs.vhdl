@@ -25,7 +25,13 @@ entity uart_csrs is
 
         -- Internal Control/Status
         baud_div_o : out std_logic_vector(15 downto 0);
-        status_i   : in  std_logic_vector(5 downto 0);
+        
+        tx_not_full_i : in  std_logic;
+        rx_not_full_i : in  std_logic;
+        tx_valid_i    : in  std_logic;
+        rx_valid_i    : in  std_logic;
+        tx_busy_i     : in  std_logic;
+        rx_busy_i     : in  std_logic;
         
         -- Internal Data Interface
         tx_valid_o : out std_logic;
@@ -46,6 +52,8 @@ architecture rtl of uart_csrs is
     
     signal rd_en : std_logic;
     signal wr_en : std_logic;
+    
+    signal status_reg : std_logic_vector(5 downto 0);
 
 begin
 
@@ -72,17 +80,19 @@ begin
     tx_valid_o <= '1' when wr_en = '1' and adr_i = TXRX_ADDR else '0';
     tx_data_o  <= dat_i(7 downto 0);
     rx_ready_o <= '1' when rd_en = '1' and adr_i = TXRX_ADDR else '0';
+    
+    status_reg <= tx_not_full_i & rx_not_full_i & tx_valid_i & rx_valid_i & tx_busy_i & rx_busy_i;
 
     ------------------------------ Outputs ------------------------------
 
     ack_o <= stb_i and cyc_i;
 
-    rd_mux_proc: process(rd_en, adr_i, status_i, baud_div_reg, rx_data_i)
+    rd_mux_proc: process(rd_en, adr_i, status_reg, baud_div_reg, rx_data_i)
     begin
         if rd_en = '1' then
             case adr_i is
                 when STAT_ADDR =>
-                    dat_o(5 downto 0)   <= status_i;
+                    dat_o(5 downto 0)   <= status_reg;
                     dat_o(31 downto 6)  <= (others => '0');
                 when CTRL_ADDR =>
                     dat_o <= (1 downto 0 => '1', others => '0');

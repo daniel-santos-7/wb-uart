@@ -16,7 +16,13 @@ entity uart is
 
         -- Control/Status Interface
         baud_div_i : in  std_logic_vector(15 downto 0);
-        status_o   : out std_logic_vector(5 downto 0);
+        
+        tx_not_full_o : out std_logic;
+        rx_not_full_o : out std_logic;
+        tx_valid_o    : out std_logic;
+        rx_valid_o    : out std_logic;
+        tx_busy_o     : out std_logic;
+        rx_busy_o     : out std_logic;
         
         -- FIFO Control Interface
         valid_i : in  std_logic;
@@ -118,11 +124,11 @@ begin
 
     ------------------------------ Outputs ------------------------------
 
-    status_o(5) <= tx_fifo_not_full;
-    status_o(4) <= rx_fifo_not_full;
-    status_o(3) <= tx_fifo_valid;
-    status_o(2) <= rx_fifo_valid;
-    status_o(1) <= tx_busy;
-    status_o(0) <= rx_busy;
+    tx_not_full_o <= tx_fifo_not_full;
+    rx_not_full_o <= rx_fifo_not_full;
+    tx_valid_o    <= tx_fifo_valid;
+    rx_valid_o    <= rx_fifo_valid;
+    tx_busy_o     <= tx_busy;
+    rx_busy_o     <= rx_busy;
 
 end architecture rtl;

@@ -72,7 +72,13 @@ package uart_pkg is
             ack_o : out std_logic;
 
             baud_div_o : out std_logic_vector(15 downto 0);
-            status_i   : in  std_logic_vector(5 downto 0);
+            
+            tx_not_full_i : in  std_logic;
+            rx_not_full_i : in  std_logic;
+            tx_valid_i    : in  std_logic;
+            rx_valid_i    : in  std_logic;
+            tx_busy_i     : in  std_logic;
+            rx_busy_i     : in  std_logic;
             
             tx_valid_o : out std_logic;
             tx_data_o  : out std_logic_vector(7 downto 0);
@@ -87,7 +93,13 @@ package uart_pkg is
             reset   : in  std_logic;
 
             baud_div_i : in  std_logic_vector(15 downto 0);
-            status_o   : out std_logic_vector(5 downto 0);
+            
+            tx_not_full_o : out std_logic;
+            rx_not_full_o : out std_logic;
+            tx_valid_o    : out std_logic;
+            rx_valid_o    : out std_logic;
+            tx_busy_o     : out std_logic;
+            rx_busy_o     : out std_logic;
             
             valid_i : in  std_logic;
             data_i  : in  std_logic_vector(7 downto 0);

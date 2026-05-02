@@ -28,13 +28,19 @@ end entity uart_wbsl;
 
 architecture rtl of uart_wbsl is
 
-    signal status   : std_logic_vector(5 downto 0);
     signal baud_div : std_logic_vector(15 downto 0);
 
-    signal tx_valid : std_logic;
-    signal tx_data  : std_logic_vector(7 downto 0);
-    signal rx_ready : std_logic;
-    signal rx_data  : std_logic_vector(7 downto 0);
+    signal tx_not_full : std_logic;
+    signal rx_not_full : std_logic;
+    signal tx_valid    : std_logic;
+    signal rx_valid    : std_logic;
+    signal tx_busy     : std_logic;
+    signal rx_busy     : std_logic;
+
+    signal tx_fifo_valid : std_logic;
+    signal tx_fifo_data  : std_logic_vector(7 downto 0);
+    signal rx_fifo_ready : std_logic;
+    signal rx_fifo_data  : std_logic_vector(7 downto 0);
 
 begin
 
@@ -53,27 +59,38 @@ begin
         ack_o   => ack_o,
 
         baud_div_o => baud_div,
-        status_i   => status,
         
-        tx_valid_o => tx_valid,
-        tx_data_o  => tx_data,
-        rx_ready_o => rx_ready,
-        rx_data_i  => rx_data
+        tx_not_full_i => tx_not_full,
+        rx_not_full_i => rx_not_full,
+        tx_valid_i    => tx_valid,
+        rx_valid_i    => rx_valid,
+        tx_busy_i     => tx_busy,
+        rx_busy_i     => rx_busy,
+        
+        tx_valid_o => tx_fifo_valid,
+        tx_data_o  => tx_fifo_data,
+        rx_ready_o => rx_fifo_ready,
+        rx_data_i  => rx_fifo_data
     );
 
     ----------------------- Datapath Logic -----------------------------
 
     uart_inst: uart port map (
-        clk        => clk_i,
-        reset      => rst_i,
-        baud_div_i => baud_div,
-        status_o   => status,
-        valid_i    => tx_valid,
-        data_i     => tx_data,
-        ready_i    => rx_ready,
-        data_o     => rx_data,
-        rx         => rx,
-        tx         => tx
+        clk           => clk_i,
+        reset         => rst_i,
+        baud_div_i    => baud_div,
+        tx_not_full_o => tx_not_full,
+        rx_not_full_o => rx_not_full,
+        tx_valid_o    => tx_valid,
+        rx_valid_o    => rx_valid,
+        tx_busy_o     => tx_busy,
+        rx_busy_o     => rx_busy,
+        valid_i       => tx_fifo_valid,
+        data_i        => tx_fifo_data,
+        ready_i       => rx_fifo_ready,
+        data_o        => rx_fifo_data,
+        rx            => rx,
+        tx            => tx
     );
 
 end architecture rtl;
