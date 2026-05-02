@@ -122,13 +122,13 @@ begin
                 if baud_cnt_done = '1' then
                     baud_cnt_reg <= (others => '0');
                 else
-                    baud_cnt_reg <= baud_cnt_reg + 1;
+                    baud_cnt_reg <= (baud_cnt_reg + 1);
                 end if;
             end if;
         end if;
     end process baud_cnt_proc;
 
-    baud_cnt_done <= '1' when baud_cnt_reg = baud_cnt_mux - 1 else '0';
+    baud_cnt_done <= '1' when baud_cnt_reg = (baud_cnt_mux - 1) else '0';
 
     rx_cnt_proc: process(clk_i)
     begin
