@@ -1,3 +1,10 @@
+----------------------------------------------------------------------
+-- Wishbone UART
+-- developed by: Daniel Santos
+-- module: uart_pkg
+-- description: components and constants package
+----------------------------------------------------------------------
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 
@@ -25,45 +32,45 @@ package uart_pkg is
 
     component uart_tx is
         port (
-            clk_i:   in  std_logic;
-            rst_i:   in  std_logic;
-            valid_i: in  std_logic;
-            data_i:  in  std_logic_vector(7 downto 0);
-            div_i:   in  std_logic_vector(15 downto 0);
-            tx_o:    out std_logic;
-            busy_o:  out std_logic;
-            ready_o: out std_logic
+            clk_i   : in  std_logic;
+            rst_i   : in  std_logic;
+            valid_i : in  std_logic;
+            data_i  : in  std_logic_vector(7 downto 0);
+            div_i   : in  std_logic_vector(15 downto 0);
+            tx_o    : out std_logic;
+            busy_o  : out std_logic;
+            ready_o : out std_logic
         );
     end component uart_tx;
 
     component uart_rx is
         port (
-            clk_i:      in  std_logic;
-            rst_i:      in  std_logic;
-            rx_i:       in  std_logic;
-            ready_i:    in  std_logic;
-            div_i:      in  std_logic_vector(15 downto 0);
-            busy_o:     out std_logic;
-            valid_o:    out std_logic;
-            data_o:     out std_logic_vector(7 downto 0)
+            clk_i   : in  std_logic;
+            rst_i   : in  std_logic;
+            rx_i    : in  std_logic;
+            ready_i : in  std_logic;
+            div_i   : in  std_logic_vector(15 downto 0);
+            busy_o  : out std_logic;
+            valid_o : out std_logic;
+            data_o  : out std_logic_vector(7 downto 0)
         );
     end component uart_rx;
 
     component uart is
         port (
-            clk:   in  std_logic;
-            reset: in  std_logic;
+            clk   : in  std_logic;
+            reset : in  std_logic;
 
-            rd:      in  std_logic;
-            rd_addr: in  std_logic_vector(1  downto 0);
-            rd_data: out std_logic_vector(15 downto 0);
+            rd      : in  std_logic;
+            rd_addr : in  std_logic_vector(1 downto 0);
+            rd_data : out std_logic_vector(15 downto 0);
 
-            wr:      in std_logic;
-            wr_addr: in std_logic_vector(1  downto 0);
-            wr_data: in std_logic_vector(15 downto 0);
+            wr      : in  std_logic;
+            wr_addr : in  std_logic_vector(1 downto 0);
+            wr_data : in  std_logic_vector(15 downto 0);
 
-            rx: in  std_logic;
-            tx: out std_logic
+            rx : in  std_logic;
+            tx : out std_logic
         );
     end component uart;
 
@@ -75,7 +82,7 @@ package uart_pkg is
             cyc_i : in  std_logic;
             stb_i : in  std_logic;
             we_i  : in  std_logic;
-            sel_i : in  std_logic_vector(3  downto 0);
+            sel_i : in  std_logic_vector(3 downto 0);
             adr_i : in  std_logic_vector(1 downto 0);
             rx    : in  std_logic;
             ack_o : out std_logic;

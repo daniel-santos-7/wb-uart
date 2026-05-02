@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------
--- Leaf project
+-- Wishbone UART
 -- developed by: Daniel Santos
 -- module: fifo
 -- description: generic circular buffer
@@ -28,84 +28,69 @@ end entity fifo;
 
 architecture rtl of fifo is
 
-    ----------------------------- types ----------------------------------
-
-    type fifo_data_array is array (0 to FIFO_DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);
-
     constant READ_OP  : std_logic := '0';
     constant WRITE_OP : std_logic := '1';
 
-    ---------------------------- fifo data -------------------------------
+    type fifo_data_array is array (0 to FIFO_DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);
 
-    signal fifo_data: fifo_data_array;
+    signal fifo_data_reg : fifo_data_array;
+    signal last_op_reg   : std_logic;
 
-    --------------------- fifo last op register --------------------------
+    signal wr_ptr_reg : integer range 0 to FIFO_DEPTH-1;
+    signal rd_ptr_reg : integer range 0 to FIFO_DEPTH-1;
 
-    signal last_op: std_logic;
-
-    ---------------------------- pointers --------------------------------
-
-    signal wr_pointer: integer range 0 to FIFO_DEPTH-1;
-    signal rd_pointer: integer range 0 to FIFO_DEPTH-1;
-
-    ------------------------- internal flags -----------------------------
-
-    signal empty: std_logic;
-    signal full:  std_logic;
+    signal empty : std_logic;
+    signal full  : std_logic;
 
 begin
 
-    ---------------------- read data from fifo ---------------------------
+    ----------------------- Datapath Logic -----------------------------
 
-    dat_o <= fifo_data(rd_pointer);
+    dat_o <= fifo_data_reg(rd_ptr_reg);
 
-    read_data: process(clk_i)
+    read_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                rd_pointer <= 0;
+                rd_ptr_reg <= 0;
             elsif rdy_i = '1' and empty = '0' then
-                rd_pointer <= (rd_pointer + 1) mod FIFO_DEPTH;
+                rd_ptr_reg <= (rd_ptr_reg + 1) mod FIFO_DEPTH;
             end if;
         end if;
-    end process read_data;
+    end process read_proc;
 
-    ------------------------ write data on fifo --------------------------
-
-    write_data: process(clk_i)
+    write_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                fifo_data <= (others => (others => '0'));
-                wr_pointer <= 0;
+                fifo_data_reg <= (others => (others => '0'));
+                wr_ptr_reg <= 0;
             elsif vld_i = '1' and full = '0' then
-                fifo_data(wr_pointer) <= dat_i;
-                wr_pointer <= (wr_pointer + 1) mod FIFO_DEPTH;
+                fifo_data_reg(wr_ptr_reg) <= dat_i;
+                wr_ptr_reg <= (wr_ptr_reg + 1) mod FIFO_DEPTH;
             end if;
         end if;
-    end process write_data;
+    end process write_proc;
 
-    --------------------- last operation storage -------------------------
-
-    save_last_op: process(clk_i)
+    last_op_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                last_op <= READ_OP;
+                last_op_reg <= READ_OP;
             elsif rdy_i = '1' and vld_i = '0' then
-                last_op <= READ_OP;
+                last_op_reg <= READ_OP;
             elsif rdy_i = '0' and vld_i = '1' then
-                last_op <= WRITE_OP;
+                last_op_reg <= WRITE_OP;
             end if;
         end if;
-    end process save_last_op;
+    end process last_op_proc;
 
-    ------------------------- internal flags -----------------------------
+    ------------------------- Control Logic ----------------------------
 
-    empty <= '1' when wr_pointer = rd_pointer and last_op = READ_OP  else '0';
-    full  <= '1' when wr_pointer = rd_pointer and last_op = WRITE_OP else '0';
+    empty <= '1' when wr_ptr_reg = rd_ptr_reg and last_op_reg = READ_OP  else '0';
+    full  <= '1' when wr_ptr_reg = rd_ptr_reg and last_op_reg = WRITE_OP else '0';
 
-    -------------------------- output flags -------------------------------
+    ------------------------------ Outputs ------------------------------
 
     vld_o <= not empty;
     rdy_o <= not full;
