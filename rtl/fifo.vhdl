@@ -33,82 +33,116 @@ end entity fifo;
 
 architecture rtl of fifo is
 
-    constant READ_OP  : std_logic := '0';
-    constant WRITE_OP : std_logic := '1';
+    -- Function to calculate the number of bits required to represent n values
+    function clog2 (n : natural) return natural is
+        variable res : natural := 0;
+        variable tmp : natural := n;
+    begin
+        if n <= 1 then return 1; end if;
+        tmp := n - 1;
+        while tmp > 0 loop
+            tmp := tmp / 2;
+            res := res + 1;
+        end loop;
+        return res;
+    end function;
+
+    constant ADDR_WIDTH : natural := clog2(FIFO_DEPTH);
 
     type fifo_data_array is array (0 to FIFO_DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);
 
     signal fifo_data_reg : fifo_data_array; -- Memory array (inferable to BRAM)
-    signal last_op_reg   : std_logic;       -- Tracks the last operation to resolve empty/full
 
-    signal wr_ptr_reg : integer range 0 to FIFO_DEPTH-1; -- Write address pointer
-    signal rd_ptr_reg : integer range 0 to FIFO_DEPTH-1; -- Read address pointer
+    signal wr_ptr_reg : unsigned(ADDR_WIDTH-1 downto 0); -- Write address pointer
+    signal rd_ptr_reg : unsigned(ADDR_WIDTH-1 downto 0); -- Read address pointer
+    
+    signal wr_ptr_next : unsigned(ADDR_WIDTH-1 downto 0); -- Next write address
+    signal rd_ptr_next : unsigned(ADDR_WIDTH-1 downto 0); -- Next read address
 
-    signal empty : std_logic; -- Internal empty flag
-    signal full  : std_logic; -- Internal full flag
+    signal empty_reg : std_logic; -- Registered empty flag
+    signal full_reg  : std_logic; -- Registered full flag
+
+    signal pushing : std_logic;
+    signal popping : std_logic;
 
 begin
 
+    ----------------------- Internal Control Signals ---------------------
+
+    pushing <= valid_i and not full_reg;
+    popping <= ready_i and not empty_reg;
+
+    wr_ptr_next <= (others => '0') when wr_ptr_reg = FIFO_DEPTH - 1 else wr_ptr_reg + 1;
+    rd_ptr_next <= (others => '0') when rd_ptr_reg = FIFO_DEPTH - 1 else rd_ptr_reg + 1;
+
     ----------------------- Datapath Logic -----------------------------
 
+    -- Process 1: Memory Write (Dedicated to RAM inference)
+    memory_proc: process(clk_i)
+    begin
+        if rising_edge(clk_i) then
+            if pushing = '1' then
+                fifo_data_reg(to_integer(wr_ptr_reg)) <= data_i;
+            end if;
+        end if;
+    end process memory_proc;
+
     -- Combinational data output
-    data_o <= fifo_data_reg(rd_ptr_reg);
+    data_o <= fifo_data_reg(to_integer(rd_ptr_reg));
 
-    -- Read pointer management
-    read_proc: process(clk_i)
+    ----------------------- Control Logic ----------------------------
+
+    -- Process 2: Write Pointer Management
+    write_pointer_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                rd_ptr_reg <= 0;
-            elsif ready_i = '1' and empty = '0' then
-                if rd_ptr_reg = FIFO_DEPTH - 1 then
-                    rd_ptr_reg <= 0;
-                else
-                    rd_ptr_reg <= rd_ptr_reg + 1;
+                wr_ptr_reg <= (others => '0');
+            elsif pushing = '1' then
+                wr_ptr_reg <= wr_ptr_next;
+            end if;
+        end if;
+    end process write_pointer_proc;
+
+    -- Process 3: Read Pointer Management
+    read_pointer_proc: process(clk_i)
+    begin
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
+                rd_ptr_reg <= (others => '0');
+            elsif popping = '1' then
+                rd_ptr_reg <= rd_ptr_next;
+            end if;
+        end if;
+    end process read_pointer_proc;
+
+    -- Process 4: Status Logic (Optimized, no counter)
+    status_proc: process(clk_i)
+    begin
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
+                empty_reg    <= '1';
+                full_reg     <= '0';
+            else
+                if pushing = '1' and popping = '0' then
+                    empty_reg <= '0';
+                    if wr_ptr_next = rd_ptr_reg then
+                        full_reg <= '1';
+                    end if;
+                elsif popping = '1' and pushing = '0' then
+                    full_reg <= '0';
+                    if rd_ptr_next = wr_ptr_reg then
+                        empty_reg <= '1';
+                    end if;
                 end if;
+                -- Simultaneous push/pop: distance remains constant, no change to flags
             end if;
         end if;
-    end process read_proc;
-
-    -- Write data and pointer management
-    write_proc: process(clk_i)
-    begin
-        if rising_edge(clk_i) then
-            if rst_i = '1' then
-                wr_ptr_reg <= 0;
-            elsif valid_i = '1' and full = '0' then
-                fifo_data_reg(wr_ptr_reg) <= data_i;
-                if wr_ptr_reg = FIFO_DEPTH - 1 then
-                    wr_ptr_reg <= 0;
-                else
-                    wr_ptr_reg <= wr_ptr_reg + 1;
-                end if;
-            end if;
-        end if;
-    end process write_proc;
-
-    -- Tracks the last operation to differentiate between empty and full when pointers are equal
-    last_op_proc: process(clk_i)
-    begin
-        if rising_edge(clk_i) then
-            if rst_i = '1' then
-                last_op_reg <= READ_OP;
-            elsif ready_i = '1' and valid_i = '0' then
-                last_op_reg <= READ_OP;
-            elsif ready_i = '0' and valid_i = '1' then
-                last_op_reg <= WRITE_OP;
-            end if;
-        end if;
-    end process last_op_proc;
-
-    ------------------------- Control Logic ----------------------------
-
-    empty <= '1' when wr_ptr_reg = rd_ptr_reg and last_op_reg = READ_OP  else '0';
-    full  <= '1' when wr_ptr_reg = rd_ptr_reg and last_op_reg = WRITE_OP else '0';
+    end process status_proc;
 
     ------------------------------ Outputs ------------------------------
 
-    valid_o <= not empty;
-    ready_o <= not full;
+    valid_o <= not empty_reg;
+    ready_o <= not full_reg;
 
 end architecture rtl;
