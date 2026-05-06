@@ -2,7 +2,8 @@
 -- Wishbone UART
 -- developed by: Daniel Santos
 -- module: fifo
--- description: generic circular buffer
+-- description: generic circular buffer (optimized for synthesis)
+-- license: MIT
 ----------------------------------------------------------------------
 
 library IEEE;
@@ -11,20 +12,22 @@ use IEEE.numeric_std.all;
 
 entity fifo is
     generic (
-        FIFO_DEPTH : natural := 8;
-        DATA_WIDTH : natural := 8
+        FIFO_DEPTH : natural := 8; -- Number of slots in the FIFO
+        DATA_WIDTH : natural := 8  -- Width of each data slot
     );
     port (
-        clk_i : in  std_logic;
-        rst_i : in  std_logic;
+        clk_i : in  std_logic; -- System clock
+        rst_i : in  std_logic; -- Synchronous reset (active high)
 
-        valid_i : in  std_logic;
-        ready_i : in  std_logic;
-        data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
+        -- Input Interface
+        valid_i : in  std_logic; -- Input data is valid (push)
+        ready_i : in  std_logic; -- Downstream is ready (pop enable)
+        data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0); -- Data to be stored
 
-        valid_o : out std_logic;
-        ready_o : out std_logic;
-        data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0)
+        -- Output Interface
+        valid_o : out std_logic; -- FIFO is not empty (data available)
+        ready_o : out std_logic; -- FIFO is not full (ready to accept data)
+        data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0)  -- Data at current read pointer
     );
 end entity fifo;
 
@@ -35,45 +38,56 @@ architecture rtl of fifo is
 
     type fifo_data_array is array (0 to FIFO_DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);
 
-    signal fifo_data_reg : fifo_data_array;
-    signal last_op_reg   : std_logic;
+    signal fifo_data_reg : fifo_data_array; -- Memory array (inferable to BRAM)
+    signal last_op_reg   : std_logic;       -- Tracks the last operation to resolve empty/full
 
-    signal wr_ptr_reg : integer range 0 to FIFO_DEPTH-1;
-    signal rd_ptr_reg : integer range 0 to FIFO_DEPTH-1;
+    signal wr_ptr_reg : integer range 0 to FIFO_DEPTH-1; -- Write address pointer
+    signal rd_ptr_reg : integer range 0 to FIFO_DEPTH-1; -- Read address pointer
 
-    signal empty : std_logic;
-    signal full  : std_logic;
+    signal empty : std_logic; -- Internal empty flag
+    signal full  : std_logic; -- Internal full flag
 
 begin
 
     ----------------------- Datapath Logic -----------------------------
 
+    -- Combinational data output
     data_o <= fifo_data_reg(rd_ptr_reg);
 
+    -- Read pointer management
     read_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 rd_ptr_reg <= 0;
             elsif ready_i = '1' and empty = '0' then
-                rd_ptr_reg <= (rd_ptr_reg + 1) mod FIFO_DEPTH;
+                if rd_ptr_reg = FIFO_DEPTH - 1 then
+                    rd_ptr_reg <= 0;
+                else
+                    rd_ptr_reg <= rd_ptr_reg + 1;
+                end if;
             end if;
         end if;
     end process read_proc;
 
+    -- Write data and pointer management
     write_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                fifo_data_reg <= (others => (others => '0'));
                 wr_ptr_reg <= 0;
             elsif valid_i = '1' and full = '0' then
                 fifo_data_reg(wr_ptr_reg) <= data_i;
-                wr_ptr_reg <= (wr_ptr_reg + 1) mod FIFO_DEPTH;
+                if wr_ptr_reg = FIFO_DEPTH - 1 then
+                    wr_ptr_reg <= 0;
+                else
+                    wr_ptr_reg <= wr_ptr_reg + 1;
+                end if;
             end if;
         end if;
     end process write_proc;
 
+    -- Tracks the last operation to differentiate between empty and full when pointers are equal
     last_op_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then

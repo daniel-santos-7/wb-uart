@@ -3,29 +3,35 @@
 -- developed by: Daniel Santos
 -- module: uart_csrs
 -- description: Control and Status Registers (CSRs) with Wishbone interface
+-- license: MIT
 ----------------------------------------------------------------------
 
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
+use work.uart_pkg.all;
 
 entity uart_csrs is
+    generic (
+        DATA_WIDTH : natural := 8 -- UART word size (propagated for data register padding)
+    );
     port (
-        clk_i   : in  std_logic;
-        rst_i   : in  std_logic;
+        clk_i   : in  std_logic; -- System clock
+        rst_i   : in  std_logic; -- Synchronous reset (active high)
 
-        -- Wishbone Interface
-        cyc_i : in  std_logic;
-        stb_i : in  std_logic;
-        we_i  : in  std_logic;
-        adr_i : in  std_logic_vector(1 downto 0);
-        dat_i : in  std_logic_vector(31 downto 0);
-        dat_o : out std_logic_vector(31 downto 0);
-        ack_o : out std_logic;
+        -- Wishbone B4 Slave Interface
+        cyc_i : in  std_logic; -- Cycle strobe
+        stb_i : in  std_logic; -- Slave strobe
+        we_i  : in  std_logic; -- Write enable
+        adr_i : in  std_logic_vector(1 downto 0);  -- Register address
+        dat_i : in  std_logic_vector(31 downto 0); -- Data from bus
+        dat_o : out std_logic_vector(31 downto 0); -- Data to bus
+        ack_o : out std_logic; -- Bus transaction acknowledge
 
         -- Internal Control/Status
-        baud_div_o : out std_logic_vector(15 downto 0);
+        baud_div_o : out std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Baud rate config
         
+        -- Discrete status inputs from core
         tx_not_full_i : in  std_logic;
         rx_not_full_i : in  std_logic;
         tx_valid_i    : in  std_logic;
@@ -33,42 +39,38 @@ entity uart_csrs is
         tx_busy_i     : in  std_logic;
         rx_busy_i     : in  std_logic;
         
-        -- Internal Data Interface
-        tx_valid_o : out std_logic;
-        tx_data_o  : out std_logic_vector(7 downto 0);
-        rx_ready_o : out std_logic;
-        rx_data_i  : in  std_logic_vector(7 downto 0)
+        -- Internal Handshake Interface
+        tx_valid_o : out std_logic; -- Triggers TX FIFO write
+        tx_data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0); -- Data to transmit
+        rx_ready_o : out std_logic; -- Triggers RX FIFO read
+        rx_data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0) -- Data received
     );
 end entity uart_csrs;
 
 architecture rtl of uart_csrs is
 
-    constant STAT_ADDR : std_logic_vector(1 downto 0) := b"00";
-    constant CTRL_ADDR : std_logic_vector(1 downto 0) := b"01";
-    constant BRDV_ADDR : std_logic_vector(1 downto 0) := b"10";
-    constant TXRX_ADDR : std_logic_vector(1 downto 0) := b"11";
-
-    signal baud_div_reg : std_logic_vector(15 downto 0);
+    signal baud_div_reg : std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Stored divider
     
-    signal rd_en : std_logic;
-    signal wr_en : std_logic;
+    signal rd_en : std_logic; -- Internal read cycle flag
+    signal wr_en : std_logic; -- Internal write cycle flag
     
-    signal status_reg : std_logic_vector(5 downto 0);
+    signal status_reg : std_logic_vector(5 downto 0); -- Assembled status word
 
 begin
 
-    ----------------------- Control Logic ----------------------------
+    ----------------------- Bus Access Logic ----------------------------
 
     rd_en <= stb_i and cyc_i and not we_i;
     wr_en <= stb_i and cyc_i and we_i;
 
+    -- Baud rate divider storage
     baud_div_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 baud_div_reg <= (others => '1');
-            elsif wr_en = '1' and adr_i = BRDV_ADDR then
-                baud_div_reg <= dat_i(15 downto 0);
+            elsif wr_en = '1' and adr_i = ADDR_BRDV then
+                baud_div_reg <= dat_i(UART_BAUD_WIDTH-1 downto 0);
             end if;
         end if;
     end process baud_div_proc;
@@ -77,30 +79,38 @@ begin
 
     baud_div_o <= baud_div_reg;
 
-    tx_valid_o <= '1' when wr_en = '1' and adr_i = TXRX_ADDR else '0';
-    tx_data_o  <= dat_i(7 downto 0);
-    rx_ready_o <= '1' when rd_en = '1' and adr_i = TXRX_ADDR else '0';
+    -- FIFO handshake signals
+    tx_valid_o <= '1' when wr_en = '1' and adr_i = ADDR_TXRX else '0';
+    tx_data_o  <= dat_i(DATA_WIDTH-1 downto 0);
+    rx_ready_o <= '1' when rd_en = '1' and adr_i = ADDR_TXRX else '0';
     
-    status_reg <= tx_not_full_i & rx_not_full_i & tx_valid_i & rx_valid_i & tx_busy_i & rx_busy_i;
+    -- Status assembly using constants from package
+    status_reg(STAT_TX_NOT_FULL_BIT) <= tx_not_full_i;
+    status_reg(STAT_RX_NOT_FULL_BIT) <= rx_not_full_i;
+    status_reg(STAT_TX_VALID_BIT)    <= tx_valid_i;
+    status_reg(STAT_RX_VALID_BIT)    <= rx_valid_i;
+    status_reg(STAT_TX_BUSY_BIT)     <= tx_busy_i;
+    status_reg(STAT_RX_BUSY_BIT)     <= rx_busy_i;
 
     ------------------------------ Outputs ------------------------------
 
     ack_o <= stb_i and cyc_i;
 
+    -- Register read multiplexer
     rd_mux_proc: process(rd_en, adr_i, status_reg, baud_div_reg, rx_data_i)
     begin
         if rd_en = '1' then
             case adr_i is
-                when STAT_ADDR =>
+                when ADDR_STAT =>
                     dat_o(5 downto 0)   <= status_reg;
                     dat_o(31 downto 6)  <= (others => '0');
-                when CTRL_ADDR =>
+                when ADDR_CTRL =>
                     dat_o <= (1 downto 0 => '1', others => '0');
-                when BRDV_ADDR =>
-                    dat_o <= x"0000" & baud_div_reg;
-                when TXRX_ADDR =>
-                    dat_o(7 downto 0)   <= rx_data_i;
-                    dat_o(31 downto 8)  <= (others => '0');
+                when ADDR_BRDV =>
+                    dat_o <= (31 downto UART_BAUD_WIDTH => '0') & baud_div_reg;
+                when ADDR_TXRX =>
+                    dat_o(DATA_WIDTH-1 downto 0) <= rx_data_i;
+                    dat_o(31 downto DATA_WIDTH)  <= (others => '0');
                 when others =>
                     dat_o <= (others => '0');
             end case;

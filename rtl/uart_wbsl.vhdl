@@ -3,6 +3,7 @@
 -- developed by: Daniel Santos
 -- module: uart_wbsl
 -- description: Wishbone B4 Slave wrapper
+-- license: MIT
 ----------------------------------------------------------------------
 
 library IEEE;
@@ -10,19 +11,26 @@ use IEEE.std_logic_1164.all;
 use work.uart_pkg.all;
 
 entity uart_wbsl is
+    generic (
+        FIFO_DEPTH : natural := 8; -- Number of slots in the TX/RX FIFOs
+        DATA_WIDTH : natural := 8  -- UART data word size (5 to 8 bits)
+    );
     port (
-        clk_i : in  std_logic;
-        rst_i : in  std_logic;
-        dat_i : in  std_logic_vector(31 downto 0);
-        cyc_i : in  std_logic;
-        stb_i : in  std_logic;
-        we_i  : in  std_logic;
-        sel_i : in  std_logic_vector(3 downto 0);
-        adr_i : in  std_logic_vector(1 downto 0);
-        rx    : in  std_logic;
-        ack_o : out std_logic;
-        dat_o : out std_logic_vector(31 downto 0);
-        tx    : out std_logic
+        -- Wishbone B4 Slave Interface
+        clk_i : in  std_logic; -- System clock
+        rst_i : in  std_logic; -- Synchronous reset (active high)
+        dat_i : in  std_logic_vector(31 downto 0); -- Bus write data
+        cyc_i : in  std_logic; -- Cycle strobe
+        stb_i : in  std_logic; -- Slave strobe
+        we_i  : in  std_logic; -- Write enable
+        sel_i : in  std_logic_vector(3 downto 0); -- Byte enables (ignored, 32-bit registers)
+        adr_i : in  std_logic_vector(1 downto 0); -- Register address
+        ack_o : out std_logic; -- Acknowledge
+        dat_o : out std_logic_vector(31 downto 0); -- Bus read data
+
+        -- UART Line Interface
+        rx    : in  std_logic; -- Serial input line
+        tx    : out std_logic  -- Serial output line
     );
 end entity uart_wbsl;
 
@@ -38,15 +46,18 @@ architecture rtl of uart_wbsl is
     signal rx_busy     : std_logic;
 
     signal tx_fifo_valid : std_logic;
-    signal tx_fifo_data  : std_logic_vector(7 downto 0);
+    signal tx_fifo_data  : std_logic_vector(DATA_WIDTH-1 downto 0);
     signal rx_fifo_ready : std_logic;
-    signal rx_fifo_data  : std_logic_vector(7 downto 0);
+    signal rx_fifo_data  : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 begin
 
-    ----------------------- Control Logic ----------------------------
+    ----------------------- Control Logic (Bus Interface) ------------------
 
-    csrs_inst: uart_csrs port map (
+    csrs_inst: uart_csrs 
+    generic map (
+        DATA_WIDTH => DATA_WIDTH
+    ) port map (
         clk_i   => clk_i,
         rst_i   => rst_i,
 
@@ -73,11 +84,15 @@ begin
         rx_data_i  => rx_fifo_data
     );
 
-    ----------------------- Datapath Logic -----------------------------
+    ----------------------- Datapath Logic (Functional Core) ---------------
 
-    uart_inst: uart port map (
-        clk           => clk_i,
-        reset         => rst_i,
+    uart_inst: uart 
+    generic map (
+        FIFO_DEPTH => FIFO_DEPTH,
+        DATA_WIDTH => DATA_WIDTH
+    ) port map (
+        clk_i         => clk_i,
+        rst_i         => rst_i,
         baud_div_i    => baud_div,
         tx_not_full_o => tx_not_full,
         rx_not_full_o => rx_not_full,
