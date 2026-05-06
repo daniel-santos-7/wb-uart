@@ -28,6 +28,9 @@ package uart_pkg is
     constant STAT_TX_BUSY_BIT     : natural := 1; -- '1' when transmitter is active
     constant STAT_RX_BUSY_BIT     : natural := 0; -- '1' when receiver is active
 
+    -- Utility Functions
+    function clog2 (n : natural) return natural;
+
     -- Components
     component fifo is
         generic (
@@ -162,3 +165,20 @@ package uart_pkg is
     end component uart_wbsl;
 
 end package uart_pkg;
+
+package body uart_pkg is
+
+    function clog2 (n : natural) return natural is
+        variable res : natural := 0;
+        variable tmp : natural := n;
+    begin
+        if n <= 1 then return 1; end if;
+        tmp := n - 1;
+        while tmp > 0 loop
+            tmp := tmp / 2;
+            res := res + 1;
+        end loop;
+        return res;
+    end function;
+
+end package body uart_pkg;
