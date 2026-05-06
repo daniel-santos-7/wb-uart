@@ -9,6 +9,7 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
+use work.uart_pkg.all;
 
 entity fifo is
     generic (
@@ -33,25 +34,11 @@ end entity fifo;
 
 architecture rtl of fifo is
 
-    -- Function to calculate the number of bits required to represent n values
-    function clog2 (n : natural) return natural is
-        variable res : natural := 0;
-        variable tmp : natural := n;
-    begin
-        if n <= 1 then return 1; end if;
-        tmp := n - 1;
-        while tmp > 0 loop
-            tmp := tmp / 2;
-            res := res + 1;
-        end loop;
-        return res;
-    end function;
-
     constant ADDR_WIDTH : natural := clog2(FIFO_DEPTH);
 
     type fifo_data_array is array (0 to FIFO_DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);
 
-    signal fifo_data_reg : fifo_data_array; -- Memory array (inferable to BRAM)
+    signal fifo_data_reg : fifo_data_array; -- Memory array
 
     signal wr_ptr_reg : unsigned(ADDR_WIDTH-1 downto 0); -- Write address pointer
     signal rd_ptr_reg : unsigned(ADDR_WIDTH-1 downto 0); -- Read address pointer
