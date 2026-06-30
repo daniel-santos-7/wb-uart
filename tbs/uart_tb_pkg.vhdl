@@ -11,7 +11,7 @@ use IEEE.numeric_std.all;
 
 package uart_tb_pkg is
 
-    constant CLK_PERIOD : time := 20 ns;
+    constant CLK_PERIOD : time := 10 ns;
 
     constant UART_9600_BAUD_RATE_PERIOD : time := 104160 ns;
 
