@@ -54,7 +54,7 @@ architecture rtl of uart_csrs is
     signal rd_en : std_logic; -- Internal read cycle flag
     signal wr_en : std_logic; -- Internal write cycle flag
 
-    signal status_reg : std_logic_vector(5 downto 0); -- Assembled status word
+    signal status : std_logic_vector(5 downto 0); -- Assembled status word
     signal ack_reg    : std_logic; -- Registered acknowledge
     signal dat_reg  : std_logic_vector(31 downto 0); -- Registered read data
 
@@ -80,12 +80,12 @@ begin
     ----------------------- Datapath Logic -----------------------------
 
     -- Status assembly using constants from package
-    status_reg(STAT_TX_NOT_FULL_BIT) <= tx_not_full_i;
-    status_reg(STAT_RX_NOT_FULL_BIT) <= rx_not_full_i;
-    status_reg(STAT_TX_VALID_BIT)    <= tx_valid_i;
-    status_reg(STAT_RX_VALID_BIT)    <= rx_valid_i;
-    status_reg(STAT_TX_BUSY_BIT)     <= tx_busy_i;
-    status_reg(STAT_RX_BUSY_BIT)     <= rx_busy_i;
+    status(STAT_TX_NOT_FULL_BIT) <= tx_not_full_i;
+    status(STAT_RX_NOT_FULL_BIT) <= rx_not_full_i;
+    status(STAT_TX_VALID_BIT)    <= tx_valid_i;
+    status(STAT_RX_VALID_BIT)    <= rx_valid_i;
+    status(STAT_TX_BUSY_BIT)     <= tx_busy_i;
+    status(STAT_RX_BUSY_BIT)     <= rx_busy_i;
 
     ------------------------------ Outputs ------------------------------
 
@@ -107,7 +107,7 @@ begin
             if rd_en = '1' then
                 case adr_i is
                     when ADDR_STAT =>
-                        dat_reg(5 downto 0)   <= status_reg;
+                        dat_reg(5 downto 0)   <= status;
                         dat_reg(31 downto 6)  <= (others => '0');
                     when ADDR_CTRL =>
                         dat_reg <= (1 downto 0 => '1', others => '0');
