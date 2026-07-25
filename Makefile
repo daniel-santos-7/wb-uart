@@ -11,9 +11,9 @@ SYNDIR   = syn
 RTL_SRC = \
 	./rtl/uart_pkg.vhdl \
 	./rtl/fifo.vhdl \
-	./rtl/uart_csrs.vhdl \
-	./rtl/uart_rx.vhdl \
 	./rtl/uart_tx.vhdl \
+	./rtl/uart_rx.vhdl \
+	./rtl/uart_csrs.vhdl \
 	./rtl/uart.vhdl \
 	./rtl/uart_wbsl.vhdl
 
@@ -38,9 +38,14 @@ $(WORKDIR) $(WAVESDIR) $(SYNDIR):
 $(WAVESDIR)/$(TOP_TB).ghw: .make | $(WAVESDIR)
 	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS) --wave=$@
 
-.PHONY: simulation clean synthesis
+.PHONY: simulation simulation_7bit clean synthesis
 simulation: .make
+	@echo "Running standard simulation (8-bit data)..."
 	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS)
+
+simulation_7bit: .make
+	@echo "Running 7-bit data width simulation..."
+	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS) -gDATA_WIDTH=7
 
 synthesis: .analyze | $(SYNDIR)
 	@$(GHDL) --synth $(GHDLFLAGS) --out=verilog $(TOP_SYNTH) > $(SYNDIR)/$(TOP_SYNTH).v

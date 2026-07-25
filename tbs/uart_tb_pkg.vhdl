@@ -158,6 +158,9 @@ package body uart_tb_pkg is
         wb_bus.adr_o <= addr;
         wb_bus.dat_o <= data;
 
+        wait until rising_edge(clk);
+        wb_bus.stb_o <= '0';
+
         loop
             wait until rising_edge(clk);
             if wb_bus.ack_i = '1' then
@@ -166,7 +169,6 @@ package body uart_tb_pkg is
         end loop;
 
         wb_bus.cyc_o <= '0';
-        wb_bus.stb_o <= '0';
         wb_bus.we_o  <= '0';
     end procedure wb_write;
 
@@ -184,6 +186,9 @@ package body uart_tb_pkg is
         wb_bus.adr_o <= addr;
         wb_bus.dat_o <= (others => '0');
 
+        wait until rising_edge(clk);
+        wb_bus.stb_o <= '0';
+
         loop
             wait until rising_edge(clk);
             if wb_bus.ack_i = '1' then
@@ -193,7 +198,6 @@ package body uart_tb_pkg is
         end loop;
 
         wb_bus.cyc_o <= '0';
-        wb_bus.stb_o <= '0';
         wb_bus.we_o  <= '0';
     end procedure wb_read;
 
