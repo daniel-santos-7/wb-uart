@@ -96,8 +96,8 @@ begin
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                empty_reg    <= '1';
-                full_reg     <= '0';
+                empty_reg <= '1';
+                full_reg  <= '0';
             else
                 if pushing = '1' and popping = '0' then
                     empty_reg <= '0';

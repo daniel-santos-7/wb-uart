@@ -105,7 +105,7 @@ begin
             if rd_en = '1' then
                 case adr_i is
                     when ADDR_STAT =>
-                        dat_reg(5 downto 0)   <= status;
+                        dat_reg(5 downto 0)  <= status;
                         dat_reg(31 downto 6)  <= (others => '0');
                     when ADDR_CTRL =>
                         dat_reg <= (1 downto 0 => '1', others => '0');

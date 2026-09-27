@@ -21,8 +21,8 @@ architecture tb of uart_tb is
 
     signal wb_bus : wishbone_bus_t;
 
-    signal rx_i  : std_logic;
-    signal tx_o  : std_logic;
+    signal rx_i : std_logic;
+    signal tx_o : std_logic;
 
     signal clk_en : std_logic := '0';
 
@@ -42,19 +42,19 @@ begin
     ----------------------- Unit Under Test ----------------------------
 
     uut_inst: entity work.uart_wbsl port map (
-        clk_i => clk_i,
-        rst_i => rst_i,
-        dat_i => wb_bus.dat_o,
-        cyc_i => wb_bus.cyc_o,
-        stb_i => wb_bus.stb_o,
-        we_i  => wb_bus.we_o,
-        sel_i => wb_bus.sel_o,
-        adr_i => wb_bus.adr_o,
-        rx_i  => rx_i,
-        ack_o => wb_bus.ack_i,
+        clk_i   => clk_i,
+        rst_i   => rst_i,
+        dat_i   => wb_bus.dat_o,
+        cyc_i   => wb_bus.cyc_o,
+        stb_i   => wb_bus.stb_o,
+        we_i    => wb_bus.we_o,
+        sel_i   => wb_bus.sel_o,
+        adr_i   => wb_bus.adr_o,
+        rx_i    => rx_i,
+        ack_o   => wb_bus.ack_i,
         stall_o => wb_bus.stall_i,
-        dat_o => wb_bus.dat_i,
-        tx_o  => tx_o
+        dat_o   => wb_bus.dat_i,
+        tx_o    => tx_o
     );
 
     ----------------------- Clock Generation ---------------------------
@@ -83,7 +83,7 @@ begin
         wait for 10 * CLK_PERIOD;
         clk_en <= '0';
         wait;
-     end process uart_rx_proc;
+    end process uart_rx_proc;
 
     test_proc: process
         variable wb_data : std_logic_vector(31 downto 0) := (others => '0');
@@ -91,7 +91,7 @@ begin
         rst_i <= '1';
 
         wb_init(wb_bus);
-        rx_i  <= '1';
+        rx_i <= '1';
 
         wait until rising_edge(clk_i);
         rst_i <= '0';

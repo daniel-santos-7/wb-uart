@@ -46,7 +46,7 @@ architecture rtl of uart_rx is
     signal baud_cnt_reg  : unsigned(UART_BAUD_WIDTH-1 downto 0);
     signal rx_cnt_reg    : integer range 0 to DATA_WIDTH-1;
 
-    signal rx_data_reg  : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal rx_data_reg : std_logic_vector(DATA_WIDTH-1 downto 0);
 
     signal baud_cnt_done : std_logic;
     signal rx_cnt_done   : std_logic;
@@ -66,7 +66,7 @@ begin
                 case state_reg is
                     when RX_IDLE =>
                         if rx_i = '0' and en_i = '1' then
-                            state_reg <= RX_START;
+                            state_reg       <= RX_START;
                             baud_cnt_en_reg <= '1';
                         end if;
 
@@ -84,7 +84,7 @@ begin
                         end if;
 
                     when RX_DATA =>
-                        if  baud_cnt_done = '1' and rx_cnt_done = '1' then
+                        if baud_cnt_done = '1' and rx_cnt_done = '1' then
                             state_reg      <= RX_STOP;
                             rx_data_en_reg <= '0';
                         end if;
@@ -97,8 +97,8 @@ begin
                                 baud_cnt_en_reg  <= '0';
                                 baud_cnt_sel_reg <= '0';
                             else -- Framing error or FIFO full: discard the frame
-                                state_reg <= RX_IDLE;
-                                baud_cnt_en_reg <= '0';
+                                state_reg        <= RX_IDLE;
+                                baud_cnt_en_reg  <= '0';
                                 baud_cnt_sel_reg <= '0';
                             end if;
                         end if;
