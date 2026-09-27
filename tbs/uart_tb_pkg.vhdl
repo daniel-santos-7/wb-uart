@@ -27,19 +27,19 @@ package uart_tb_pkg is
 
     procedure uart_transmit (
         signal tx     : out std_logic;
-        constant data : in  std_logic_vector(7 downto 0);
+        constant data : in  std_logic_vector;
         constant baud : in  time := UART_115200_BAUD_RATE_PERIOD
     );
 
     procedure uart_receive (
         signal rx     : in  std_logic;
-        variable data : out std_logic_vector(7 downto 0);
+        variable data : out std_logic_vector;
         constant baud : in  time := UART_115200_BAUD_RATE_PERIOD
     );
 
     procedure uart_expect (
         signal rx     : in std_logic;
-        constant data : in std_logic_vector(7 downto 0);
+        constant data : in std_logic_vector;
         constant baud : in time := UART_115200_BAUD_RATE_PERIOD
     );
 
@@ -87,13 +87,13 @@ package body uart_tb_pkg is
 
     procedure uart_transmit (
         signal tx     : out std_logic;
-        constant data : in  std_logic_vector(7 downto 0);
+        constant data : in  std_logic_vector;
         constant baud : in  time := UART_115200_BAUD_RATE_PERIOD
     ) is
     begin
         tx <= '0';
         wait for baud;
-        for i in 0 to 7 loop
+        for i in data'low to data'high loop
             tx <= data(i);
             wait for baud;
         end loop;
@@ -103,13 +103,13 @@ package body uart_tb_pkg is
 
     procedure uart_receive (
         signal rx     : in  std_logic;
-        variable data : out std_logic_vector(7 downto 0);
+        variable data : out std_logic_vector;
         constant baud : in  time := UART_115200_BAUD_RATE_PERIOD
     ) is
     begin
         wait until rx = '0';
         wait for baud/2;
-        for i in 0 to 7 loop
+        for i in data'low to data'high loop
             wait for baud;
             data(i) := rx;
         end loop;
@@ -118,10 +118,10 @@ package body uart_tb_pkg is
 
     procedure uart_expect (
         signal rx     : in std_logic;
-        constant data : in std_logic_vector(7 downto 0);
+        constant data : in std_logic_vector;
         constant baud : in time := UART_115200_BAUD_RATE_PERIOD
     ) is
-        variable received_data : std_logic_vector(7 downto 0);
+        variable received_data : std_logic_vector(data'range);
         variable result        : boolean;
     begin
         uart_receive(rx, received_data, baud);

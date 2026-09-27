@@ -12,6 +12,9 @@ use work.uart_pkg.all;
 use work.uart_tb_pkg.all;
 
 entity uart_tb is
+    generic (
+        DATA_WIDTH : positive := 8
+    );
 end entity uart_tb;
 
 architecture tb of uart_tb is
@@ -37,11 +40,25 @@ architecture tb of uart_tb is
         x"FE"
     );
 
+    -- Test bytes truncated or zero-extended to DATA_WIDTH
+    function to_word (b : std_logic_vector) return std_logic_vector is
+    begin
+        return std_logic_vector(resize(unsigned(b), DATA_WIDTH));
+    end function to_word;
+
+    -- Same word as seen on the 32-bit Wishbone data bus
+    function to_bus (b : std_logic_vector) return std_logic_vector is
+    begin
+        return std_logic_vector(resize(unsigned(to_word(b)), 32));
+    end function to_bus;
+
 begin
 
     ----------------------- Unit Under Test ----------------------------
 
-    uut_inst: entity work.uart_wbsl port map (
+    uut_inst: entity work.uart_wbsl generic map (
+        DATA_WIDTH => DATA_WIDTH
+    ) port map (
         clk_i   => clk_i,
         rst_i   => rst_i,
         dat_i   => wb_bus.dat_o,
@@ -67,13 +84,13 @@ begin
     begin
         clk_en <= '1';
         -- Written while BRDV = 0, sent once BRDV is configured (issue #3)
-        uart_expect(tx_o, x"5A");
+        uart_expect(tx_o, to_word(x"5A"));
         -- First frame keeps the old rate; BRDV is lowered mid-frame (issue #2)
-        uart_expect(tx_o, test_data(0));
-        uart_expect(tx_o, test_data(1), UART_230400_BAUD_RATE_PERIOD);
+        uart_expect(tx_o, to_word(test_data(0)));
+        uart_expect(tx_o, to_word(test_data(1)), UART_230400_BAUD_RATE_PERIOD);
         -- BRDV = 0 written during this frame: it completes, then TX stays off (issue #3)
         tx_off_req <= '1';
-        uart_expect(tx_o, test_data(2), UART_230400_BAUD_RATE_PERIOD);
+        uart_expect(tx_o, to_word(test_data(2)), UART_230400_BAUD_RATE_PERIOD);
         wait for 20 * UART_230400_BAUD_RATE_PERIOD;
         if tx_o'stable(20 * UART_230400_BAUD_RATE_PERIOD) then
             report "tx_off check PASSED: line idle" severity note;
@@ -126,8 +143,8 @@ begin
         wb_write(b"11", x"000000EE", clk_i, wb_bus, "1110");
         wb_check(b"00", x"00000030", clk_i, wb_bus); -- TX_READY, RX_READY, TX FIFO empty
 
-        uart_transmit(rx_i, x"A5");
-        wb_write(b"11", x"0000005A", clk_i, wb_bus);
+        uart_transmit(rx_i, to_word(x"A5"));
+        wb_write(b"11", to_bus(x"5A"), clk_i, wb_bus);
         wait for 100 * CLK_PERIOD;
         wb_check(b"00", x"00000038", clk_i, wb_bus); -- TX_READY, RX_READY, TX_VALID
 
@@ -136,17 +153,17 @@ begin
 
         -- Transmit data to UART line
         for i in test_data'range loop
-            uart_transmit(rx_i, test_data(i));
+            uart_transmit(rx_i, to_word(test_data(i)));
         end loop;
 
         -- Check received data via Wishbone
         for i in test_data'range loop
-            wb_check(b"11", x"000000" & test_data(i), clk_i, wb_bus);
+            wb_check(b"11", to_bus(test_data(i)), clk_i, wb_bus);
         end loop;
 
         -- Write data via Wishbone (to be checked by uart_rx_proc)
         for i in test_data'range loop
-            wb_write(b"11", x"000000" & test_data(i), clk_i, wb_bus);
+            wb_write(b"11", to_bus(test_data(i)), clk_i, wb_bus);
         end loop;
 
         -- Lower BRDV while the first frame is in progress (baud counter above the new divider)
@@ -158,7 +175,7 @@ begin
         wait until tx_o = '0';
         wait for 50 * CLK_PERIOD;
         wb_write(b"10", x"00000000", clk_i, wb_bus);
-        wait for 12 * UART_230400_BAUD_RATE_PERIOD;
+        wait for (DATA_WIDTH + 4) * UART_230400_BAUD_RATE_PERIOD; -- Rest of the frame plus margin
         wb_check(b"00", x"00000038", clk_i, wb_bus); -- TX_READY, RX_READY, TX_VALID
 
         wait;

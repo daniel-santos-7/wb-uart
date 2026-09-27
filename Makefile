@@ -25,6 +25,9 @@ TBS_SRC = \
 TOP_TB    = uart_tb
 TOP_SYNTH = uart_wbsl
 
+# Testbench data width, e.g. make simulation DATA_WIDTH=7
+DATA_WIDTH ?= 8
+
 $(WORKDIR) $(WAVESDIR) $(SYNDIR):
 	@mkdir -p $@
 
@@ -39,14 +42,10 @@ $(WORKDIR) $(WAVESDIR) $(SYNDIR):
 $(WAVESDIR)/$(TOP_TB).ghw: .make | $(WAVESDIR)
 	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS) --wave=$@
 
-.PHONY: simulation simulation_7bit clean synthesis
+.PHONY: simulation clean synthesis
 simulation: .make
-	@echo "Running standard simulation (8-bit data)..."
-	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS)
-
-simulation_7bit: .make
-	@echo "Running 7-bit data width simulation..."
-	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS) -gDATA_WIDTH=7
+	@echo "Running simulation ($(DATA_WIDTH)-bit data)..."
+	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS) -gDATA_WIDTH=$(DATA_WIDTH)
 
 synthesis: .analyze | $(SYNDIR)
 	@$(GHDL) --synth $(GHDLFLAGS) --out=verilog $(TOP_SYNTH) > $(SYNDIR)/$(TOP_SYNTH).v

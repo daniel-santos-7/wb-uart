@@ -68,6 +68,10 @@ To compile the design and run the standard testbench:
 ```bash
 make simulation
 ```
+The testbench uses 8-bit data by default. To run it with another `DATA_WIDTH`:
+```bash
+make simulation DATA_WIDTH=7
+```
 
 ### Synthesis (VHDL to Verilog)
 
