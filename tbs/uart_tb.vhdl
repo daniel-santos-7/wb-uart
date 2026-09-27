@@ -50,6 +50,7 @@ begin
         adr_i => wb_bus.adr_o,
         rx    => rx_i,
         ack_o => wb_bus.ack_i,
+        stall_o => wb_bus.stall_i,
         dat_o => wb_bus.dat_i,
         tx    => tx_o
     );

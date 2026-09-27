@@ -27,6 +27,7 @@ entity uart_csrs is
         dat_i : in  std_logic_vector(31 downto 0); -- Data from bus
         dat_o : out std_logic_vector(31 downto 0); -- Data to bus
         ack_o : out std_logic; -- Bus transaction acknowledge
+        stall_o : out std_logic; -- Pipeline stall (never asserted)
 
         -- Internal Control/Status
         baud_div_o : out std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Baud rate config
@@ -126,6 +127,7 @@ begin
     ------------------------------ Outputs ------------------------------
 
     ack_o      <= ack_reg;
+    stall_o    <= '0'; -- Accepts one request per cycle (pipelined masters only)
     baud_div_o <= baud_div_reg;
     dat_o      <= dat_reg;
     tx_data_o  <= dat_i(DATA_WIDTH-1 downto 0);

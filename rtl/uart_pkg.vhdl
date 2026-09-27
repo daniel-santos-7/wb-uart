@@ -98,6 +98,7 @@ package uart_pkg is
             dat_i : in  std_logic_vector(31 downto 0);
             dat_o : out std_logic_vector(31 downto 0);
             ack_o : out std_logic;
+            stall_o : out std_logic;
 
             baud_div_o : out std_logic_vector(UART_BAUD_WIDTH-1 downto 0);
             
@@ -159,6 +160,7 @@ package uart_pkg is
             adr_i : in  std_logic_vector(1 downto 0);
             rx    : in  std_logic;
             ack_o : out std_logic;
+            stall_o : out std_logic;
             dat_o : out std_logic_vector(31 downto 0);
             tx    : out std_logic
         );

@@ -1,10 +1,10 @@
 # WB-UART: Simple & Robust UART IP Core
 
-A simple and robust, synthesizable UART (Universal Asynchronous Receiver-Transmitter) IP core written in VHDL-93, featuring a Wishbone B4 compatible slave interface.
+A simple and robust, synthesizable UART (Universal Asynchronous Receiver-Transmitter) IP core written in VHDL-93, featuring a Wishbone B4 pipelined slave interface.
 
 ## Key Features
 
-- **Standard Interface:** Wishbone Slave (B4) compatible.
+- **Standard Interface:** Wishbone B4 pipelined slave. Accepts one request per cycle (`STALL_O` is never asserted) and acknowledges it on the next cycle. Classic-cycle masters that hold `STB_I` until `ACK_O` are **not** supported: each access would be executed twice.
 - **Fully Parameterizable:**
   - `FIFO_DEPTH`: Configurable buffer size (default: 8).
   - `DATA_WIDTH`: Configurable word size from 5 to 8 bits (default: 8).

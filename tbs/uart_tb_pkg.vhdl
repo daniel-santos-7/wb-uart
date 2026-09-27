@@ -47,6 +47,7 @@ package uart_tb_pkg is
         adr_o : std_logic_vector(1 downto 0);
         dat_o : std_logic_vector(31 downto 0);
         ack_i : std_logic;
+        stall_i : std_logic;
         dat_i : std_logic_vector(31 downto 0);
     end record wishbone_bus_t;
 
@@ -142,6 +143,7 @@ package body uart_tb_pkg is
         wb_bus.dat_o <= (others => '0');
         wb_bus.dat_i <= (others => 'Z');
         wb_bus.ack_i <= 'Z';
+        wb_bus.stall_i <= 'Z';
     end procedure wb_init;
 
     procedure wb_write (
@@ -158,7 +160,10 @@ package body uart_tb_pkg is
         wb_bus.adr_o <= addr;
         wb_bus.dat_o <= data;
 
-        wait until rising_edge(clk);
+        loop -- Hold the request until the slave accepts it
+            wait until rising_edge(clk);
+            exit when wb_bus.stall_i = '0';
+        end loop;
         wb_bus.stb_o <= '0';
 
         loop
@@ -186,7 +191,10 @@ package body uart_tb_pkg is
         wb_bus.adr_o <= addr;
         wb_bus.dat_o <= (others => '0');
 
-        wait until rising_edge(clk);
+        loop -- Hold the request until the slave accepts it
+            wait until rising_edge(clk);
+            exit when wb_bus.stall_i = '0';
+        end loop;
         wb_bus.stb_o <= '0';
 
         loop

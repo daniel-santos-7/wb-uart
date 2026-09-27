@@ -26,6 +26,7 @@ entity uart_wbsl is
         sel_i : in  std_logic_vector(3 downto 0); -- Byte enables (ignored, 32-bit registers)
         adr_i : in  std_logic_vector(1 downto 0); -- Register address
         ack_o : out std_logic; -- Acknowledge
+        stall_o : out std_logic; -- Pipeline stall (never asserted)
         dat_o : out std_logic_vector(31 downto 0); -- Bus read data
 
         -- UART Line Interface
@@ -68,6 +69,7 @@ begin
         dat_i   => dat_i,
         dat_o   => dat_o,
         ack_o   => ack_o,
+        stall_o => stall_o,
 
         baud_div_o => baud_div,
         
