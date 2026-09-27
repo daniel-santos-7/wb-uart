@@ -38,7 +38,7 @@ end entity uart_wbsl;
 architecture rtl of uart_wbsl is
 
     -- csrs_inst outputs
-    signal csrs_inst_baud_div : std_logic_vector(15 downto 0);
+    signal csrs_inst_baud_div : std_logic_vector(UART_BAUD_WIDTH-1 downto 0);
     signal csrs_inst_en       : std_logic;
     signal csrs_inst_tx_valid : std_logic;
     signal csrs_inst_tx_data  : std_logic_vector(DATA_WIDTH-1 downto 0);

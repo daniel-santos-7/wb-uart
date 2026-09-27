@@ -20,7 +20,7 @@ entity uart_rx is
         rst_i   : in  std_logic; -- Synchronous reset (active high)
         rx_i    : in  std_logic; -- Synchronized serial input line
         ready_i : in  std_logic; -- Downstream ready to receive data
-        baud_div_i : in  std_logic_vector(15 downto 0); -- Baud rate divider value
+        baud_div_i : in  std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Baud rate divider value
         en_i       : in  std_logic; -- Receiver enable (a frame in progress completes)
         
         busy_o  : out std_logic; -- High during active reception
@@ -40,10 +40,10 @@ architecture rtl of uart_rx is
     signal rx_data_en_reg   : std_logic; -- Data shift enable
     signal valid_reg        : std_logic; -- Internal valid flag
     
-    signal baud_div_reg  : unsigned(15 downto 0); -- Baud divider held constant during a frame
-    signal baud_cnt_last : unsigned(15 downto 0); -- Last count of a full bit period
-    signal baud_cnt_mux  : unsigned(15 downto 0); -- Last count of the current period
-    signal baud_cnt_reg  : unsigned(15 downto 0); -- Clock cycle counter for bit timing
+    signal baud_div_reg  : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Baud divider held constant during a frame
+    signal baud_cnt_last : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Last count of a full bit period
+    signal baud_cnt_mux  : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Last count of the current period
+    signal baud_cnt_reg  : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Clock cycle counter for bit timing
     signal rx_cnt_reg    : integer range 0 to DATA_WIDTH-1; -- Received bit counter
 
     signal rx_data_reg  : std_logic_vector(DATA_WIDTH-1 downto 0); -- Shift register
@@ -136,7 +136,7 @@ begin
     baud_cnt_mux_proc: process(baud_cnt_sel_reg, baud_cnt_last)
     begin
         if baud_cnt_sel_reg = '0' then
-            baud_cnt_mux <= '0' & baud_cnt_last(15 downto 1);
+            baud_cnt_mux <= '0' & baud_cnt_last(UART_BAUD_WIDTH-1 downto 1);
         else
             baud_cnt_mux <= baud_cnt_last;
         end if;

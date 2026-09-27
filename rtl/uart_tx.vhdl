@@ -20,7 +20,7 @@ entity uart_tx is
         rst_i      : in  std_logic; -- Synchronous reset (active high)
         valid_i    : in  std_logic; -- Input data is valid (handshake)
         data_i     : in  std_logic_vector(DATA_WIDTH-1 downto 0); -- Data word to transmit
-        baud_div_i : in  std_logic_vector(15 downto 0); -- Baud rate divider value
+        baud_div_i : in  std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Baud rate divider value
         en_i       : in  std_logic; -- Transmitter enable (a frame in progress completes)
         tx_o       : out std_logic; -- Serial output line
         busy_o     : out std_logic; -- High during active transmission
@@ -39,8 +39,8 @@ architecture rtl of uart_tx is
     signal ready_reg       : std_logic; -- Internal ready flag
     signal tx_reg          : std_logic; -- Registered serial output
 
-    signal baud_div_reg : unsigned(15 downto 0); -- Baud divider held constant during a frame
-    signal baud_cnt_reg : unsigned(15 downto 0); -- Clock cycle counter for bit timing
+    signal baud_div_reg : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Baud divider held constant during a frame
+    signal baud_cnt_reg : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Clock cycle counter for bit timing
     signal tx_cnt_reg   : integer range 0 to DATA_WIDTH-1; -- Transmitted bit counter
 
     signal data_reg : std_logic_vector(DATA_WIDTH-1 downto 0); -- Transmit shift register

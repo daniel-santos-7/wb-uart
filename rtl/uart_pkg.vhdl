@@ -12,7 +12,8 @@ use IEEE.std_logic_1164.all;
 package uart_pkg is
 
     -- Global Constants
-    constant UART_BAUD_WIDTH : natural := 16; -- Width of the baud rate divider register
+    -- Width of the baud rate divider register. BRDV byte writes (sel_i) handle 9 to 16 bits
+    constant UART_BAUD_WIDTH : natural := 16;
 
     -- BRDV value that turns RX and TX off (also the reset value)
     constant BRDV_OFF : std_logic_vector(UART_BAUD_WIDTH-1 downto 0) := (others => '0');

@@ -20,7 +20,7 @@ entity uart is
         rst_i   : in  std_logic; -- Synchronous reset (active high)
 
         -- Control/Status Interface
-        baud_div_i : in  std_logic_vector(15 downto 0); -- Configured baud rate divider
+        baud_div_i : in  std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Configured baud rate divider
         en_i       : in  std_logic; -- RX/TX enable (BRDV /= 0)
         
         -- Individual status flags for CSR module
