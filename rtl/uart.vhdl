@@ -12,8 +12,8 @@ use work.uart_pkg.all;
 
 entity uart is
     generic (
-        FIFO_DEPTH : natural := 8; -- Number of slots in TX/RX FIFOs
-        DATA_WIDTH : natural := 8  -- UART data word size (5 to 8 bits)
+        FIFO_DEPTH : positive := 8; -- Number of slots in TX/RX FIFOs
+        DATA_WIDTH : positive := 8  -- UART data word size
     );
     port (
         clk_i   : in  std_logic; -- System clock

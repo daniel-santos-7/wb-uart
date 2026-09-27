@@ -13,7 +13,7 @@ use work.uart_pkg.all;
 
 entity uart_rx is
     generic (
-        DATA_WIDTH : natural := 8 -- UART data word size (5 to 8 bits)
+        DATA_WIDTH : positive := 8 -- UART data word size
     );
     port (
         clk_i   : in  std_logic; -- System clock

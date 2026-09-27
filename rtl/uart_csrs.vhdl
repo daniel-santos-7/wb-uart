@@ -12,7 +12,7 @@ use work.uart_pkg.all;
 
 entity uart_csrs is
     generic (
-        DATA_WIDTH : natural := 8 -- UART word size (propagated for data register padding)
+        DATA_WIDTH : positive := 8 -- UART word size (propagated for data register padding)
     );
     port (
         clk_i   : in  std_logic; -- System clock

@@ -11,7 +11,7 @@ use IEEE.std_logic_1164.all;
 
 entity rx_sync is
     generic (
-        STAGES  : natural   := 2;  -- Number of flip-flops in the chain (>= 2)
+        STAGES  : positive  := 2;  -- Number of flip-flops in the chain (>= 2)
         RST_VAL : std_logic := '1' -- Chain value after reset (RX line idle level)
     );
     port (

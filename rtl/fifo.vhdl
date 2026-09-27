@@ -13,8 +13,8 @@ use work.uart_pkg.all;
 
 entity fifo is
     generic (
-        FIFO_DEPTH : natural := 8; -- Number of slots in the FIFO
-        DATA_WIDTH : natural := 8  -- Width of each data slot
+        FIFO_DEPTH : positive := 8; -- Number of slots in the FIFO
+        DATA_WIDTH : positive := 8  -- Width of each data slot
     );
     port (
         clk_i : in  std_logic; -- System clock
