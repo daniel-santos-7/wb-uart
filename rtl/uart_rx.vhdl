@@ -21,6 +21,7 @@ entity uart_rx is
         rx_i    : in  std_logic; -- Synchronized serial input line
         ready_i : in  std_logic; -- Downstream ready to receive data
         baud_div_i : in  std_logic_vector(15 downto 0); -- Baud rate divider value
+        en_i       : in  std_logic; -- Receiver enable (a frame in progress completes)
         
         busy_o  : out std_logic; -- High during active reception
         valid_o : out std_logic; -- Pulses high when a valid word is received
@@ -39,10 +40,11 @@ architecture rtl of uart_rx is
     signal rx_data_en_reg   : std_logic; -- Data shift enable
     signal valid_reg        : std_logic; -- Internal valid flag
     
-    signal baud_div_reg : unsigned(15 downto 0); -- Baud divider held constant during a frame
-    signal baud_cnt_mux : unsigned(15 downto 0); -- Target value for baud counter
-    signal baud_cnt_reg : unsigned(15 downto 0); -- Clock cycle counter for bit timing
-    signal rx_cnt_reg   : integer range 0 to DATA_WIDTH-1; -- Received bit counter
+    signal baud_div_reg  : unsigned(15 downto 0); -- Baud divider held constant during a frame
+    signal baud_cnt_last : unsigned(15 downto 0); -- Last count of a full bit period
+    signal baud_cnt_mux  : unsigned(15 downto 0); -- Last count of the current period
+    signal baud_cnt_reg  : unsigned(15 downto 0); -- Clock cycle counter for bit timing
+    signal rx_cnt_reg    : integer range 0 to DATA_WIDTH-1; -- Received bit counter
 
     signal rx_data_reg  : std_logic_vector(DATA_WIDTH-1 downto 0); -- Shift register
     
@@ -65,7 +67,7 @@ begin
             else            
                 case state_reg is
                     when RX_IDLE =>
-                        if rx_i = '0' then -- Start bit detection
+                        if rx_i = '0' and en_i = '1' then -- Start bit detection
                             state_reg <= RX_START;
                             baud_cnt_en_reg <= '1';
                         end if;
@@ -120,20 +122,23 @@ begin
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                baud_div_reg <= (others => '1');
+                baud_div_reg <= (others => '0');
             elsif baud_cnt_en_reg = '0' then
                 baud_div_reg <= unsigned(baud_div_i);
             end if;
         end if;
     end process baud_div_proc;
 
+    baud_cnt_last <= baud_div_reg - 1;
+
     -- Mux to select between half-baud (for mid-bit alignment) and full-baud
-    baud_cnt_mux_proc: process(baud_cnt_sel_reg, baud_div_reg)
+    -- Half period is taken from baud_cnt_last so that BRDV = 1 still gives 1 cycle
+    baud_cnt_mux_proc: process(baud_cnt_sel_reg, baud_cnt_last)
     begin
         if baud_cnt_sel_reg = '0' then
-            baud_cnt_mux <= '0' & baud_div_reg(15 downto 1);
+            baud_cnt_mux <= '0' & baud_cnt_last(15 downto 1);
         else
-            baud_cnt_mux <= baud_div_reg;
+            baud_cnt_mux <= baud_cnt_last;
         end if;
     end process baud_cnt_mux_proc;
 
@@ -153,7 +158,7 @@ begin
         end if;
     end process baud_cnt_proc;
 
-    baud_cnt_done <= '1' when baud_cnt_reg = (baud_cnt_mux - 1) else '0';
+    baud_cnt_done <= '1' when baud_cnt_reg = baud_cnt_mux else '0';
 
     -- Data bit counter
     rx_cnt_proc: process(clk_i)

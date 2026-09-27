@@ -8,7 +8,6 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
 use work.uart_pkg.all;
 
 entity uart_csrs is
@@ -31,6 +30,7 @@ entity uart_csrs is
 
         -- Internal Control/Status
         baud_div_o : out std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Baud rate config
+        en_o       : out std_logic; -- RX/TX enable: '0' while BRDV = 0 (registered)
 
         -- Discrete status inputs from core
         tx_not_full_i : in  std_logic;
@@ -51,6 +51,7 @@ end entity uart_csrs;
 architecture rtl of uart_csrs is
 
     signal baud_div_reg : std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Stored divider
+    signal en_reg       : std_logic; -- RX/TX enable, updated with the divider
 
     signal rd_en : std_logic; -- Internal read cycle flag
     signal wr_en : std_logic; -- Internal write cycle flag
@@ -66,14 +67,20 @@ begin
     rd_en <= stb_i and cyc_i and not we_i;
     wr_en <= stb_i and cyc_i and we_i;
 
-    -- Baud rate divider storage
+    -- Baud rate divider storage; BRDV = 0 turns RX and TX off
     baud_div_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                baud_div_reg <= (others => '1');
+                baud_div_reg <= BRDV_OFF; -- RX and TX off until software sets a rate
+                en_reg       <= '0';
             elsif wr_en = '1' and adr_i = ADDR_BRDV then
                 baud_div_reg <= dat_i(UART_BAUD_WIDTH-1 downto 0);
+                if dat_i(UART_BAUD_WIDTH-1 downto 0) = BRDV_OFF then
+                    en_reg <= '0';
+                else
+                    en_reg <= '1';
+                end if;
             end if;
         end if;
     end process baud_div_proc;
@@ -129,6 +136,7 @@ begin
     ack_o      <= ack_reg;
     stall_o    <= '0'; -- Accepts one request per cycle (pipelined masters only)
     baud_div_o <= baud_div_reg;
+    en_o       <= en_reg;
     dat_o      <= dat_reg;
     tx_data_o  <= dat_i(DATA_WIDTH-1 downto 0);
     tx_valid_o <= '1' when wr_en = '1' and adr_i = ADDR_TXRX else '0';

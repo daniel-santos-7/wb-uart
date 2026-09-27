@@ -38,6 +38,7 @@ end entity uart_wbsl;
 architecture rtl of uart_wbsl is
 
     signal baud_div : std_logic_vector(15 downto 0);
+    signal en       : std_logic;
 
     signal tx_not_full : std_logic;
     signal rx_not_full : std_logic;
@@ -71,6 +72,7 @@ begin
         stall_o => stall_o,
 
         baud_div_o => baud_div,
+        en_o       => en,
         
         tx_not_full_i => tx_not_full,
         rx_not_full_i => rx_not_full,
@@ -94,6 +96,7 @@ begin
         clk_i         => clk_i,
         rst_i         => rst_i,
         baud_div_i    => baud_div,
+        en_i          => en,
         tx_not_full_o => tx_not_full,
         rx_not_full_o => rx_not_full,
         tx_valid_o    => tx_valid,

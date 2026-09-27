@@ -21,9 +21,10 @@ entity uart_tx is
         valid_i    : in  std_logic; -- Input data is valid (handshake)
         data_i     : in  std_logic_vector(DATA_WIDTH-1 downto 0); -- Data word to transmit
         baud_div_i : in  std_logic_vector(15 downto 0); -- Baud rate divider value
+        en_i       : in  std_logic; -- Transmitter enable (a frame in progress completes)
         tx_o       : out std_logic; -- Serial output line
         busy_o     : out std_logic; -- High during active transmission
-        ready_o    : out std_logic  -- Ready to accept new data from core
+        ready_o    : out std_logic  -- Ready to accept new data from core (low while off)
     );
 end entity uart_tx;
 
@@ -63,7 +64,7 @@ begin
             else
                 case state_reg is
                     when TX_IDLE =>
-                        if valid_i = '1' then
+                        if valid_i = '1' and en_i = '1' then
                             state_reg <= TX_READ;
                             ready_reg <= '0';
                         end if;
@@ -110,8 +111,8 @@ begin
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                baud_div_reg <= (others => '1');
-            elsif baud_cnt_en_reg = '0' then
+                baud_div_reg <= (others => '0');
+            elsif ready_reg = '1' then -- TX_IDLE: frozen from the edge that leaves it
                 baud_div_reg <= unsigned(baud_div_i);
             end if;
         end if;
@@ -171,6 +172,6 @@ begin
 
     tx_o    <= tx_reg;
     busy_o  <= baud_cnt_en_reg;
-    ready_o <= ready_reg;
+    ready_o <= ready_reg and en_i; -- No FIFO pop while disabled
 
 end architecture rtl;

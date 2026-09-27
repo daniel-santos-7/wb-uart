@@ -9,7 +9,7 @@ A simple and robust, synthesizable UART (Universal Asynchronous Receiver-Transmi
   - `FIFO_DEPTH`: Configurable buffer size (default: 8).
   - `DATA_WIDTH`: Configurable word size from 5 to 8 bits (default: 8).
 - **Minimal Footprint:** Optimized for low resource usage while maintaining high reliability.
-- **Configurable Baud Rate:** 16-bit divider register for precise timing across various clock frequencies.
+- **Configurable Baud Rate:** 16-bit divider register for precise timing across various clock frequencies. Writing `0` (the reset value) turns the receiver and transmitter off; a frame in progress completes first, and TX data stays queued in the FIFO. The bit period is BRDV clock cycles. The transmitter works with any non-zero value; the receiver needs BRDV >= 2 to find the middle of each bit, and BRDV >= 16 is recommended so that line phase and baud mismatch stay a small fraction of the bit.
 - **Deep Buffering:** Integrated synchronous FIFOs for both Transmit (TX) and Receive (RX) paths.
 - **Status Monitoring:** Real-time monitoring of FIFO states (full/empty) and UART busy flags via a dedicated status register.
 - **Robust Receiver:** 
@@ -27,7 +27,7 @@ The peripheral occupies a 2-bit address space (4 registers):
 |:------:|:----:|:------:|:-----------|
 | `00`   | STAT | R      | Status Register (see below) |
 | `01`   | CTRL | R/W    | Control Register (Reserved/Fixed) |
-| `10`   | BRDV | R/W    | Baud Rate Divider (16-bit), applied at the start of the next frame |
+| `10`   | BRDV | R/W    | Baud Rate Divider (16-bit), applied at the start of the next frame. `0` (reset value) turns RX and TX off |
 | `11`   | TXRX | R/W    | Data: Write for TX / Read for RX (Width: `DATA_WIDTH`) |
 
 ### Status Register (STAT) Bits

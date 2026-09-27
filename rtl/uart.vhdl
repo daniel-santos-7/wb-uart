@@ -21,6 +21,7 @@ entity uart is
 
         -- Control/Status Interface
         baud_div_i : in  std_logic_vector(15 downto 0); -- Configured baud rate divider
+        en_i       : in  std_logic; -- RX/TX enable (BRDV /= 0)
         
         -- Individual status flags for CSR module
         tx_not_full_o : out std_logic; -- '1' when TX FIFO has space
@@ -102,6 +103,7 @@ begin
         rx_i       => rx_synced, -- Stable synchronized signal
         ready_i    => rx_fifo_not_full,
         baud_div_i => baud_div_i,
+        en_i       => en_i,
         busy_o     => rx_busy,
         valid_o    => rx_data_valid,
         data_o     => rx_data
@@ -131,6 +133,7 @@ begin
         clk_i      => clk_i,
         rst_i      => rst_i,
         baud_div_i => baud_div_i,
+        en_i       => en_i,
         ready_o    => tx_ready,
         busy_o     => tx_busy,
         valid_i    => tx_fifo_valid,

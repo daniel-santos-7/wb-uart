@@ -14,6 +14,9 @@ package uart_pkg is
     -- Global Constants
     constant UART_BAUD_WIDTH : natural := 16; -- Width of the baud rate divider register
 
+    -- BRDV value that turns RX and TX off (also the reset value)
+    constant BRDV_OFF : std_logic_vector(UART_BAUD_WIDTH-1 downto 0) := (others => '0');
+
     -- Register Address Map (2-bit address space)
     constant ADDR_STAT : std_logic_vector(1 downto 0) := b"00"; -- Status Register
     constant ADDR_CTRL : std_logic_vector(1 downto 0) := b"01"; -- Control Register
