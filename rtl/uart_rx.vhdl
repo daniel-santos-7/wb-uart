@@ -39,6 +39,7 @@ architecture rtl of uart_rx is
     signal rx_data_en_reg   : std_logic; -- Data shift enable
     signal valid_reg        : std_logic; -- Internal valid flag
     
+    signal baud_div_reg : unsigned(15 downto 0); -- Baud divider held constant during a frame
     signal baud_cnt_mux : unsigned(15 downto 0); -- Target value for baud counter
     signal baud_cnt_reg : unsigned(15 downto 0); -- Clock cycle counter for bit timing
     signal rx_cnt_reg   : integer range 0 to DATA_WIDTH-1; -- Received bit counter
@@ -114,13 +115,25 @@ begin
 
     ----------------------- Datapath Logic -----------------------------
 
+    -- Baud divider snapshot: BRDV writes take effect at the next frame
+    baud_div_proc: process(clk_i)
+    begin
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
+                baud_div_reg <= (others => '1');
+            elsif baud_cnt_en_reg = '0' then
+                baud_div_reg <= unsigned(baud_div_i);
+            end if;
+        end if;
+    end process baud_div_proc;
+
     -- Mux to select between half-baud (for mid-bit alignment) and full-baud
-    baud_cnt_mux_proc: process(baud_cnt_sel_reg, baud_div_i)
+    baud_cnt_mux_proc: process(baud_cnt_sel_reg, baud_div_reg)
     begin
         if baud_cnt_sel_reg = '0' then
-            baud_cnt_mux <= unsigned('0' & baud_div_i(15 downto 1));
+            baud_cnt_mux <= '0' & baud_div_reg(15 downto 1);
         else
-            baud_cnt_mux <= unsigned(baud_div_i);
+            baud_cnt_mux <= baud_div_reg;
         end if;
     end process baud_cnt_mux_proc;
 

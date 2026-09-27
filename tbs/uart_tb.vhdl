@@ -64,8 +64,10 @@ begin
     uart_rx_proc: process
     begin
         clk_en <= '1';
-        for i in test_data'range loop
-            uart_expect(tx_o, test_data(i));
+        -- First frame keeps the old rate; BRDV is lowered mid-frame (issue #2)
+        uart_expect(tx_o, test_data(0));
+        for i in 1 to test_data'high loop
+            uart_expect(tx_o, test_data(i), UART_230400_BAUD_RATE_PERIOD);
         end loop;
         wait for 10 * CLK_PERIOD;
         clk_en <= '0';
@@ -106,6 +108,10 @@ begin
         for i in test_data'range loop
             wb_write(b"11", x"000000" & test_data(i), clk_i, wb_bus);
         end loop;
+
+        -- Lower BRDV while the first frame is in progress (baud counter above the new divider)
+        wait for 300 * CLK_PERIOD;
+        wb_write(b"10", std_logic_vector(UART_230400_BAUD_RATE_DIVIDER), clk_i, wb_bus);
 
         wait;
     end process test_proc;

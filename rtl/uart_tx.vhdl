@@ -38,6 +38,7 @@ architecture rtl of uart_tx is
     signal ready_reg       : std_logic; -- Internal ready flag
     signal tx_reg          : std_logic; -- Registered serial output
 
+    signal baud_div_reg : unsigned(15 downto 0); -- Baud divider held constant during a frame
     signal baud_cnt_reg : unsigned(15 downto 0); -- Clock cycle counter for bit timing
     signal tx_cnt_reg   : integer range 0 to DATA_WIDTH-1; -- Transmitted bit counter
 
@@ -104,6 +105,18 @@ begin
 
     ----------------------- Datapath Logic -----------------------------
 
+    -- Baud divider snapshot: BRDV writes take effect at the next frame
+    baud_div_proc: process(clk_i)
+    begin
+        if rising_edge(clk_i) then
+            if rst_i = '1' then
+                baud_div_reg <= (others => '1');
+            elsif baud_cnt_en_reg = '0' then
+                baud_div_reg <= unsigned(baud_div_i);
+            end if;
+        end if;
+    end process baud_div_proc;
+
     -- Baud rate timing counter
     baud_cnt_proc: process(clk_i)
     begin
@@ -120,7 +133,7 @@ begin
         end if;
     end process baud_cnt_proc;
 
-    baud_cnt_done <= '1' when baud_cnt_reg = (unsigned(baud_div_i) - 1) else '0';
+    baud_cnt_done <= '1' when baud_cnt_reg = (baud_div_reg - 1) else '0';
 
     -- Data bit counter
     tx_cnt_proc: process(clk_i)
