@@ -39,7 +39,7 @@ begin
 
     ----------------------- Unit Under Test ----------------------------
 
-    uut_inst: uart_wbsl port map (
+    uut_inst: entity work.uart_wbsl port map (
         clk_i => clk_i,
         rst_i => rst_i,
         dat_i => wb_bus.dat_o,

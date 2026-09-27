@@ -55,8 +55,7 @@ begin
 
     ----------------------- Control Logic (Bus Interface) ------------------
 
-    csrs_inst: uart_csrs 
-    generic map (
+    csrs_inst: entity work.uart_csrs generic map (
         DATA_WIDTH => DATA_WIDTH
     ) port map (
         clk_i   => clk_i,
@@ -88,8 +87,7 @@ begin
 
     ----------------------- Datapath Logic (Functional Core) ---------------
 
-    uart_inst: uart 
-    generic map (
+    uart_inst: entity work.uart generic map (
         FIFO_DEPTH => FIFO_DEPTH,
         DATA_WIDTH => DATA_WIDTH
     ) port map (

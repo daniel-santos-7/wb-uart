@@ -49,7 +49,7 @@ The peripheral occupies a 2-bit address space (4 registers):
   - `uart_csrs.vhdl`: Control and Status Registers (Bus Interface).
   - `uart_tx.vhdl` / `uart_rx.vhdl`: Serializer and deserializer logic.
   - `fifo.vhdl`: Generic circular buffer implementation.
-  - `uart_pkg.vhdl`: Component, constant and utility declarations.
+  - `uart_pkg.vhdl`: Constant and utility declarations.
 - `tbs/`: Testbenches and simulation models.
 - `syn/`: Directory for generated synthesis artifacts (e.g., Verilog).
 - `work/`: GHDL intermediate build artifacts.

@@ -80,7 +80,7 @@ begin
     ----------------------- Datapath Logic (RX Path) ---------------------
 
     -- Receiver buffer
-    rx_fifo_inst: fifo generic map (
+    rx_fifo_inst: entity work.fifo generic map (
         FIFO_DEPTH => FIFO_DEPTH,
         DATA_WIDTH => DATA_WIDTH
     ) port map (
@@ -95,8 +95,7 @@ begin
     );
 
     -- Deserializer engine
-    receiver_inst: uart_rx 
-    generic map (
+    receiver_inst: entity work.uart_rx generic map (
         DATA_WIDTH => DATA_WIDTH
     ) port map (
         clk_i      => clk_i,
@@ -112,7 +111,7 @@ begin
     ----------------------- Datapath Logic (TX Path) ---------------------
 
     -- Transmitter buffer
-    tx_fifo_inst: fifo generic map (
+    tx_fifo_inst: entity work.fifo generic map (
         FIFO_DEPTH => FIFO_DEPTH,
         DATA_WIDTH => DATA_WIDTH
     ) port map (
@@ -127,8 +126,7 @@ begin
     );
 
     -- Serializer engine
-    transmitter_inst: uart_tx 
-    generic map (
+    transmitter_inst: entity work.uart_tx generic map (
         DATA_WIDTH => DATA_WIDTH
     ) port map (
         clk_i      => clk_i,

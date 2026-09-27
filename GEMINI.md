@@ -10,7 +10,7 @@ This project implements a simple and robust, synthesizable UART (Universal Async
 
 ## Project Structure
 - `rtl/`: Core synthesizable logic.
-  - `uart_pkg.vhdl`: Component, constant and utility declarations.
+  - `uart_pkg.vhdl`: Constant and utility declarations.
   - `fifo.vhdl`: Synchronous FIFO implementation (optimized for BRAM).
   - `uart_tx.vhdl` / `uart_rx.vhdl`: Serializer and deserializer logic.
   - `uart_csrs.vhdl`: Control and Status Registers (CSRs).
@@ -52,7 +52,7 @@ make clean
   - Internal signals: Registered signals use `_reg` suffix. Use `valid`/`ready`/`data` pattern.
 - **Reset:** Fully synchronous reset (`rst_i`) is used throughout the design.
 - **Generics:** Use `FIFO_DEPTH` and `DATA_WIDTH` to configure the core at instantiation.
-- **Packages:** All components are declared in `rtl/uart_pkg.vhdl`. Use `work.uart_pkg.all` in all entities.
+- **Packages:** Shared constants and `clog2` live in `rtl/uart_pkg.vhdl`. Use `work.uart_pkg.all` in all entities. Instantiate submodules directly with `entity work.<name>` (no component declarations).
 - **Hierarchy:** `uart_wbsl` (Top) -> (`uart_csrs` & `uart`) -> (`uart_tx`, `uart_rx`, `fifo`).
 
 ### Testing Practices
