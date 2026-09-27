@@ -34,8 +34,8 @@ entity uart_csrs is
         en_o       : out std_logic; -- RX/TX enable: '0' while BRDV = 0
 
         -- Discrete status inputs from core
-        tx_not_full_i : in  std_logic;
-        rx_not_full_i : in  std_logic;
+        tx_ready_i    : in  std_logic; -- TX FIFO has space (STAT only)
+        rx_ready_i    : in  std_logic; -- RX FIFO has space (STAT only)
         tx_valid_i    : in  std_logic;
         rx_valid_i    : in  std_logic;
         tx_busy_i     : in  std_logic;
@@ -87,8 +87,8 @@ begin
     ----------------------- Datapath Logic -----------------------------
 
     -- Status assembly using constants from package
-    status(STAT_TX_NOT_FULL_BIT) <= tx_not_full_i;
-    status(STAT_RX_NOT_FULL_BIT) <= rx_not_full_i;
+    status(STAT_TX_READY_BIT)    <= tx_ready_i;
+    status(STAT_RX_READY_BIT)    <= rx_ready_i;
     status(STAT_TX_VALID_BIT)    <= tx_valid_i;
     status(STAT_RX_VALID_BIT)    <= rx_valid_i;
     status(STAT_TX_BUSY_BIT)     <= tx_busy_i;

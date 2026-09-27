@@ -24,8 +24,8 @@ entity uart is
         en_i       : in  std_logic; -- RX/TX enable (BRDV /= 0)
         
         -- Individual status flags for CSR module
-        tx_not_full_o : out std_logic; -- '1' when TX FIFO has space
-        rx_not_full_o : out std_logic; -- '1' when RX FIFO has space
+        tx_ready_o    : out std_logic; -- '1' when TX FIFO has space
+        rx_ready_o    : out std_logic; -- '1' when RX FIFO has space
         tx_valid_o    : out std_logic; -- '1' when TX FIFO is not empty
         rx_valid_o    : out std_logic; -- '1' when RX FIFO is not empty
         tx_busy_o     : out std_logic; -- '1' when serial transmitter is active
@@ -143,8 +143,8 @@ begin
 
     ------------------------------ Status Outputs ------------------------
 
-    tx_not_full_o <= tx_fifo_inst_ready;
-    rx_not_full_o <= rx_fifo_inst_ready;
+    tx_ready_o    <= tx_fifo_inst_ready;
+    rx_ready_o    <= rx_fifo_inst_ready;
     tx_valid_o    <= tx_fifo_inst_valid;
     rx_valid_o    <= rx_fifo_inst_valid;
     tx_busy_o     <= transmitter_inst_busy;

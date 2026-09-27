@@ -24,8 +24,8 @@ package uart_pkg is
     constant ADDR_TXRX : std_logic_vector(1 downto 0) := b"11"; -- Data Transmit/Receive
 
     -- Status Register Bit Positions
-    constant STAT_TX_NOT_FULL_BIT : natural := 5; -- '1' when TX FIFO has space
-    constant STAT_RX_NOT_FULL_BIT : natural := 4; -- '1' when RX FIFO has space
+    constant STAT_TX_READY_BIT    : natural := 5; -- '1' when TX FIFO has space
+    constant STAT_RX_READY_BIT    : natural := 4; -- '1' when RX FIFO has space
     constant STAT_TX_VALID_BIT    : natural := 3; -- '1' when TX FIFO is not empty
     constant STAT_RX_VALID_BIT    : natural := 2; -- '1' when RX FIFO has received data
     constant STAT_TX_BUSY_BIT     : natural := 1; -- '1' when transmitter is active

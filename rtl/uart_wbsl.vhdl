@@ -45,8 +45,8 @@ architecture rtl of uart_wbsl is
     signal csrs_inst_rx_ready : std_logic;
 
     -- uart_inst outputs
-    signal uart_inst_tx_not_full : std_logic;
-    signal uart_inst_rx_not_full : std_logic;
+    signal uart_inst_tx_ready    : std_logic;
+    signal uart_inst_rx_ready    : std_logic;
     signal uart_inst_tx_valid    : std_logic;
     signal uart_inst_rx_valid    : std_logic;
     signal uart_inst_tx_busy     : std_logic;
@@ -76,8 +76,8 @@ begin
         baud_div_o => csrs_inst_baud_div,
         en_o       => csrs_inst_en,
         
-        tx_not_full_i => uart_inst_tx_not_full,
-        rx_not_full_i => uart_inst_rx_not_full,
+        tx_ready_i    => uart_inst_tx_ready,
+        rx_ready_i    => uart_inst_rx_ready,
         tx_valid_i    => uart_inst_tx_valid,
         rx_valid_i    => uart_inst_rx_valid,
         tx_busy_i     => uart_inst_tx_busy,
@@ -99,8 +99,8 @@ begin
         rst_i         => rst_i,
         baud_div_i    => csrs_inst_baud_div,
         en_i          => csrs_inst_en,
-        tx_not_full_o => uart_inst_tx_not_full,
-        rx_not_full_o => uart_inst_rx_not_full,
+        tx_ready_o    => uart_inst_tx_ready,
+        rx_ready_o    => uart_inst_rx_ready,
         tx_valid_o    => uart_inst_tx_valid,
         rx_valid_o    => uart_inst_rx_valid,
         tx_busy_o     => uart_inst_tx_busy,
