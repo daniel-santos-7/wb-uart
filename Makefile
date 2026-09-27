@@ -10,6 +10,7 @@ SYNDIR   = syn
 # RTL files in dependency order
 RTL_SRC = \
 	./rtl/uart_pkg.vhdl \
+	./rtl/rx_sync.vhdl \
 	./rtl/fifo.vhdl \
 	./rtl/uart_tx.vhdl \
 	./rtl/uart_rx.vhdl \

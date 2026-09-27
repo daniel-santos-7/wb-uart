@@ -13,7 +13,7 @@ A simple and robust, synthesizable UART (Universal Asynchronous Receiver-Transmi
 - **Deep Buffering:** Integrated synchronous FIFOs for both Transmit (TX) and Receive (RX) paths.
 - **Status Monitoring:** Real-time monitoring of FIFO states (full/empty) and UART busy flags via a dedicated status register.
 - **Robust Receiver:** 
-  - Two-stage synchronization for the `rx` input to prevent metastability.
+  - Two-stage synchronization for the `rx` input to prevent metastability (`rx_sync`).
   - Mid-bit sampling for start-bit validation and noise immunity.
   - Automatic discard of frames with stop-bit errors.
 - **Timing-Optimized Design:** Registered FSM control signals decouple state decoding from the datapath.
@@ -48,6 +48,7 @@ The peripheral occupies a 2-bit address space (4 registers):
   - `uart.vhdl`: Top-level core logic (Datapath).
   - `uart_csrs.vhdl`: Control and Status Registers (Bus Interface).
   - `uart_tx.vhdl` / `uart_rx.vhdl`: Serializer and deserializer logic.
+  - `rx_sync.vhdl`: Multi-stage synchronizer for the asynchronous RX input.
   - `fifo.vhdl`: Generic circular buffer implementation.
   - `uart_pkg.vhdl`: Constant and utility declarations.
 - `tbs/`: Testbenches and simulation models.

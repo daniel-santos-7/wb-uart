@@ -45,7 +45,7 @@ end entity uart;
 architecture rtl of uart is
 
     -- Internal state signals
-    signal rx_sync_reg : std_logic_vector(1 downto 0); -- Metastability filter for RX input
+    signal rx_synced : std_logic; -- RX input synchronized to clk_i
 
     -- RX Path internal signals
     signal rx_data_valid     : std_logic;
@@ -66,16 +66,15 @@ begin
     ----------------------- Control Logic (Sync) -------------------------
 
     -- 2-stage synchronizer for external asynchronous RX input
-    rx_sync_proc: process(clk_i)
-    begin
-        if rising_edge(clk_i) then
-            if rst_i = '1' then
-                rx_sync_reg <= (others => '1');
-            else
-                rx_sync_reg <= rx & rx_sync_reg(1);
-            end if;
-        end if;
-    end process rx_sync_proc;
+    rx_sync_inst: entity work.rx_sync generic map (
+        STAGES  => 2,
+        RST_VAL => '1' -- Line idle level: no false start bit after reset
+    ) port map (
+        clk_i => clk_i,
+        rst_i => rst_i,
+        rx_i  => rx,
+        rx_o  => rx_synced
+    );
 
     ----------------------- Datapath Logic (RX Path) ---------------------
 
@@ -100,7 +99,7 @@ begin
     ) port map (
         clk_i      => clk_i,
         rst_i      => rst_i,
-        rx_i       => rx_sync_reg(0), -- Stable synchronized signal
+        rx_i       => rx_synced, -- Stable synchronized signal
         ready_i    => rx_fifo_not_full,
         baud_div_i => baud_div_i,
         busy_o     => rx_busy,

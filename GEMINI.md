@@ -11,6 +11,7 @@ This project implements a simple and robust, synthesizable UART (Universal Async
 ## Project Structure
 - `rtl/`: Core synthesizable logic.
   - `uart_pkg.vhdl`: Constant and utility declarations.
+  - `rx_sync.vhdl`: Multi-stage synchronizer for the asynchronous RX input.
   - `fifo.vhdl`: Synchronous FIFO implementation (optimized for BRAM).
   - `uart_tx.vhdl` / `uart_rx.vhdl`: Serializer and deserializer logic.
   - `uart_csrs.vhdl`: Control and Status Registers (CSRs).
