@@ -27,8 +27,8 @@ The peripheral occupies a 2-bit address space (4 registers):
 |:------:|:----:|:------:|:-----------|
 | `00`   | STAT | R      | Status Register (see below) |
 | `01`   | CTRL | R/W    | Control Register (Reserved/Fixed) |
-| `10`   | BRDV | R/W    | Baud Rate Divider (16-bit), applied at the start of the next frame. `0` (reset value) turns RX and TX off |
-| `11`   | TXRX | R/W    | Data: Write for TX / Read for RX (Width: `DATA_WIDTH`) |
+| `10`   | BRDV | R/W    | Baud Rate Divider (16-bit), applied at the start of the next frame. `0` (reset value) turns RX and TX off. Byte writes update only the lanes selected by `sel_i` |
+| `11`   | TXRX | R/W    | Data: Write for TX / Read for RX (Width: `DATA_WIDTH`). A write is queued only when `sel_i(0)` is set |
 
 ### Status Register (STAT) Bits
 

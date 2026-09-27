@@ -22,6 +22,7 @@ entity uart_csrs is
         cyc_i : in  std_logic; -- Cycle strobe
         stb_i : in  std_logic; -- Slave strobe
         we_i  : in  std_logic; -- Write enable
+        sel_i : in  std_logic_vector(3 downto 0);  -- Byte enables (BRDV and TXRX writes)
         adr_i : in  std_logic_vector(1 downto 0);  -- Register address
         dat_i : in  std_logic_vector(31 downto 0); -- Data from bus
         dat_o : out std_logic_vector(31 downto 0); -- Data to bus
@@ -30,7 +31,7 @@ entity uart_csrs is
 
         -- Internal Control/Status
         baud_div_o : out std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Baud rate config
-        en_o       : out std_logic; -- RX/TX enable: '0' while BRDV = 0 (registered)
+        en_o       : out std_logic; -- RX/TX enable: '0' while BRDV = 0
 
         -- Discrete status inputs from core
         tx_not_full_i : in  std_logic;
@@ -51,7 +52,6 @@ end entity uart_csrs;
 architecture rtl of uart_csrs is
 
     signal baud_div_reg : std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Stored divider
-    signal en_reg       : std_logic; -- RX/TX enable, updated with the divider
 
     signal rd_en : std_logic; -- Internal read cycle flag
     signal wr_en : std_logic; -- Internal write cycle flag
@@ -67,19 +67,18 @@ begin
     rd_en <= stb_i and cyc_i and not we_i;
     wr_en <= stb_i and cyc_i and we_i;
 
-    -- Baud rate divider storage; BRDV = 0 turns RX and TX off
+    -- Baud rate divider storage (byte writes via sel_i); BRDV = 0 turns RX and TX off
     baud_div_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
                 baud_div_reg <= BRDV_OFF; -- RX and TX off until software sets a rate
-                en_reg       <= '0';
             elsif wr_en = '1' and adr_i = ADDR_BRDV then
-                baud_div_reg <= dat_i(UART_BAUD_WIDTH-1 downto 0);
-                if dat_i(UART_BAUD_WIDTH-1 downto 0) = BRDV_OFF then
-                    en_reg <= '0';
-                else
-                    en_reg <= '1';
+                if sel_i(0) = '1' then
+                    baud_div_reg(7 downto 0) <= dat_i(7 downto 0);
+                end if;
+                if sel_i(1) = '1' then
+                    baud_div_reg(UART_BAUD_WIDTH-1 downto 8) <= dat_i(UART_BAUD_WIDTH-1 downto 8);
                 end if;
             end if;
         end if;
@@ -136,10 +135,10 @@ begin
     ack_o      <= ack_reg;
     stall_o    <= '0'; -- Accepts one request per cycle (pipelined masters only)
     baud_div_o <= baud_div_reg;
-    en_o       <= en_reg;
+    en_o       <= '0' when baud_div_reg = BRDV_OFF else '1'; -- Changes with baud_div_o
     dat_o      <= dat_reg;
     tx_data_o  <= dat_i(DATA_WIDTH-1 downto 0);
-    tx_valid_o <= '1' when wr_en = '1' and adr_i = ADDR_TXRX else '0';
+    tx_valid_o <= '1' when wr_en = '1' and adr_i = ADDR_TXRX and sel_i(0) = '1' else '0';
     rx_ready_o <= '1' when rd_en = '1' and adr_i = ADDR_TXRX else '0';
 
 end architecture rtl;

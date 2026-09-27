@@ -112,7 +112,20 @@ begin
         rx_i <= '1';
         wait for 10 * CLK_PERIOD;
         wb_check(b"00", x"00000030", clk_i, wb_bus); -- TX_READY, RX_READY, nothing busy
-        wb_write(b"10", x"00000000", clk_i, wb_bus);
+
+        -- Byte enables: unselected BRDV bytes keep their value (issue #7)
+        wb_write(b"10", x"00001234", clk_i, wb_bus);
+        wb_write(b"10", x"FFFFABCD", clk_i, wb_bus, "0010");
+        wb_check(b"10", x"0000AB34", clk_i, wb_bus);
+        wb_write(b"10", x"00000000", clk_i, wb_bus, "0010");
+        wb_check(b"10", x"00000034", clk_i, wb_bus);
+        -- Merged value is 0 while dat_i is not: RX and TX must turn off (checked below)
+        wb_write(b"10", x"0000FF00", clk_i, wb_bus, "0001");
+        wb_check(b"10", x"00000000", clk_i, wb_bus);
+        -- TXRX write without sel(0) is ignored: nothing is queued
+        wb_write(b"11", x"000000EE", clk_i, wb_bus, "1110");
+        wb_check(b"00", x"00000030", clk_i, wb_bus); -- TX_READY, RX_READY, TX FIFO empty
+
         uart_transmit(rx_i, x"A5");
         wb_write(b"11", x"0000005A", clk_i, wb_bus);
         wait for 100 * CLK_PERIOD;

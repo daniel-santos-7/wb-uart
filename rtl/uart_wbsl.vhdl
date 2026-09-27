@@ -23,7 +23,7 @@ entity uart_wbsl is
         cyc_i : in  std_logic; -- Cycle strobe
         stb_i : in  std_logic; -- Slave strobe
         we_i  : in  std_logic; -- Write enable
-        sel_i : in  std_logic_vector(3 downto 0); -- Byte enables (ignored, 32-bit registers)
+        sel_i : in  std_logic_vector(3 downto 0); -- Byte enables (BRDV and TXRX writes)
         adr_i : in  std_logic_vector(1 downto 0); -- Register address
         ack_o : out std_logic; -- Acknowledge
         stall_o : out std_logic; -- Pipeline stall (never asserted)
@@ -65,6 +65,7 @@ begin
         cyc_i   => cyc_i,
         stb_i   => stb_i,
         we_i    => we_i,
+        sel_i   => sel_i,
         adr_i   => adr_i,
         dat_i   => dat_i,
         dat_o   => dat_o,

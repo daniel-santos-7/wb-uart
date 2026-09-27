@@ -63,7 +63,8 @@ package uart_tb_pkg is
         constant addr : in std_logic_vector;
         constant data : in std_logic_vector;
         signal clk    : in std_logic;
-        signal wb_bus : inout wishbone_bus_t
+        signal wb_bus : inout wishbone_bus_t;
+        constant sel  : in std_logic_vector(3 downto 0) := "1111"
     );
 
     procedure wb_read (
@@ -154,13 +155,15 @@ package body uart_tb_pkg is
         constant addr : in std_logic_vector;
         constant data : in std_logic_vector;
         signal clk    : in std_logic;
-        signal wb_bus : inout wishbone_bus_t
+        signal wb_bus : inout wishbone_bus_t;
+        constant sel  : in std_logic_vector(3 downto 0) := "1111"
     ) is
     begin
         wait until rising_edge(clk);
         wb_bus.cyc_o <= '1';
         wb_bus.stb_o <= '1';
         wb_bus.we_o  <= '1';
+        wb_bus.sel_o <= sel;
         wb_bus.adr_o <= addr;
         wb_bus.dat_o <= data;
 
@@ -192,6 +195,7 @@ package body uart_tb_pkg is
         wb_bus.cyc_o <= '1';
         wb_bus.stb_o <= '1';
         wb_bus.we_o  <= '0';
+        wb_bus.sel_o <= (others => '1');
         wb_bus.adr_o <= addr;
         wb_bus.dat_o <= (others => '0');
 
