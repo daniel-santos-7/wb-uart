@@ -13,7 +13,7 @@ A simple and robust, synthesizable UART (Universal Asynchronous Receiver-Transmi
 - **Deep Buffering:** Integrated synchronous FIFOs for both Transmit (TX) and Receive (RX) paths.
 - **Status Monitoring:** Real-time monitoring of FIFO states (full/empty) and UART busy flags via a dedicated status register.
 - **Robust Receiver:** 
-  - Two-stage synchronization for the `rx` input to prevent metastability (`rx_sync`).
+  - Two-stage synchronization for the `rx_i` input to prevent metastability (`rx_sync`).
   - Mid-bit sampling for start-bit validation and noise immunity.
   - Automatic discard of frames with stop-bit errors.
 - **Timing-Optimized Design:** Registered FSM control signals decouple state decoding from the datapath.

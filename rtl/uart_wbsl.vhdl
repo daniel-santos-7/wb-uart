@@ -30,8 +30,8 @@ entity uart_wbsl is
         dat_o : out std_logic_vector(31 downto 0); -- Bus read data
 
         -- UART Line Interface
-        rx    : in  std_logic; -- Serial input line
-        tx    : out std_logic  -- Serial output line
+        rx_i  : in  std_logic; -- Serial input line
+        tx_o  : out std_logic  -- Serial output line
     );
 end entity uart_wbsl;
 
@@ -104,8 +104,8 @@ begin
         data_i        => tx_fifo_data,
         ready_i       => rx_fifo_ready,
         data_o        => rx_fifo_data,
-        rx            => rx,
-        tx            => tx
+        rx_i          => rx_i,
+        tx_o          => tx_o
     );
 
 end architecture rtl;

@@ -37,8 +37,8 @@ entity uart is
         data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0); -- Data from RX FIFO
 
         -- Physical Serial Interface
-        rx      : in  std_logic; -- Asynchronous serial input
-        tx      : out std_logic  -- Serial output line
+        rx_i    : in  std_logic; -- Asynchronous serial input
+        tx_o    : out std_logic  -- Serial output line
     );
 end entity uart;
 
@@ -72,7 +72,7 @@ begin
     ) port map (
         clk_i => clk_i,
         rst_i => rst_i,
-        rx_i  => rx,
+        rx_i  => rx_i,
         rx_o  => rx_synced
     );
 
@@ -135,7 +135,7 @@ begin
         busy_o     => tx_busy,
         valid_i    => tx_fifo_valid,
         data_i     => tx_fifo_data,
-        tx_o       => tx
+        tx_o       => tx_o
     );
 
     ------------------------------ Status Outputs ------------------------

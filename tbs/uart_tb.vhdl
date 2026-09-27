@@ -48,11 +48,11 @@ begin
         we_i  => wb_bus.we_o,
         sel_i => wb_bus.sel_o,
         adr_i => wb_bus.adr_o,
-        rx    => rx_i,
+        rx_i  => rx_i,
         ack_o => wb_bus.ack_i,
         stall_o => wb_bus.stall_i,
         dat_o => wb_bus.dat_i,
-        tx    => tx_o
+        tx_o  => tx_o
     );
 
     ----------------------- Clock Generation ---------------------------
