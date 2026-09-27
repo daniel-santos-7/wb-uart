@@ -11,28 +11,24 @@ use IEEE.std_logic_1164.all;
 
 package uart_pkg is
 
-    -- Global Constants
-    -- Width of the baud rate divider register. BRDV byte writes (sel_i) handle 9 to 16 bits
+    -- BRDV byte writes (sel_i) handle 9 to 16 bits
     constant UART_BAUD_WIDTH : natural := 16;
 
-    -- BRDV value that turns RX and TX off (also the reset value)
+    -- Turns RX and TX off; also the reset value
     constant BRDV_OFF : std_logic_vector(UART_BAUD_WIDTH-1 downto 0) := (others => '0');
 
-    -- Register Address Map (2-bit address space)
-    constant ADDR_STAT : std_logic_vector(1 downto 0) := b"00"; -- Status Register
-    constant ADDR_CTRL : std_logic_vector(1 downto 0) := b"01"; -- Control Register
-    constant ADDR_BRDV : std_logic_vector(1 downto 0) := b"10"; -- Baud Rate Divider
-    constant ADDR_TXRX : std_logic_vector(1 downto 0) := b"11"; -- Data Transmit/Receive
+    constant ADDR_STAT : std_logic_vector(1 downto 0) := b"00";
+    constant ADDR_CTRL : std_logic_vector(1 downto 0) := b"01";
+    constant ADDR_BRDV : std_logic_vector(1 downto 0) := b"10";
+    constant ADDR_TXRX : std_logic_vector(1 downto 0) := b"11";
 
-    -- Status Register Bit Positions
-    constant STAT_TX_READY_BIT    : natural := 5; -- '1' when TX FIFO has space
-    constant STAT_RX_READY_BIT    : natural := 4; -- '1' when RX FIFO has space
-    constant STAT_TX_VALID_BIT    : natural := 3; -- '1' when TX FIFO is not empty
-    constant STAT_RX_VALID_BIT    : natural := 2; -- '1' when RX FIFO has received data
-    constant STAT_TX_BUSY_BIT     : natural := 1; -- '1' when transmitter is active
-    constant STAT_RX_BUSY_BIT     : natural := 0; -- '1' when receiver is active
+    constant STAT_TX_READY_BIT : natural := 5;
+    constant STAT_RX_READY_BIT : natural := 4;
+    constant STAT_TX_VALID_BIT : natural := 3;
+    constant STAT_RX_VALID_BIT : natural := 2;
+    constant STAT_TX_BUSY_BIT  : natural := 1;
+    constant STAT_RX_BUSY_BIT  : natural := 0;
 
-    -- Utility Functions
     function clog2 (n : natural) return natural;
 
 end package uart_pkg;

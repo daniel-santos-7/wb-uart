@@ -11,20 +11,20 @@ use IEEE.std_logic_1164.all;
 
 entity rx_sync is
     generic (
-        STAGES  : positive  := 2;  -- Number of flip-flops in the chain (>= 2)
-        RST_VAL : std_logic := '1' -- Chain value after reset (RX line idle level)
+        STAGES  : positive  := 2;
+        RST_VAL : std_logic := '1' -- RX line idle level
     );
     port (
-        clk_i : in  std_logic; -- Destination clock
-        rst_i : in  std_logic; -- Synchronous reset (active high)
-        rx_i  : in  std_logic; -- Asynchronous RX line
-        rx_o  : out std_logic  -- Synchronized RX line, STAGES cycles of latency
+        clk_i : in  std_logic;
+        rst_i : in  std_logic;
+        rx_i  : in  std_logic; -- Asynchronous
+        rx_o  : out std_logic  -- STAGES cycles of latency
     );
 end entity rx_sync;
 
 architecture rtl of rx_sync is
 
-    signal sync_reg : std_logic_vector(STAGES-1 downto 0); -- sync_reg(0) samples rx_i
+    signal sync_reg : std_logic_vector(STAGES-1 downto 0);
 
 begin
 

@@ -13,19 +13,19 @@ use work.uart_pkg.all;
 
 entity uart_rx is
     generic (
-        DATA_WIDTH : positive := 8 -- UART data word size
+        DATA_WIDTH : positive := 8
     );
     port (
-        clk_i   : in  std_logic; -- System clock
-        rst_i   : in  std_logic; -- Synchronous reset (active high)
-        rx_i    : in  std_logic; -- Synchronized serial input line
-        ready_i : in  std_logic; -- Downstream ready to receive data
-        baud_div_i : in  std_logic_vector(UART_BAUD_WIDTH-1 downto 0); -- Baud rate divider value
-        en_i       : in  std_logic; -- Receiver enable (a frame in progress completes)
-        
-        busy_o  : out std_logic; -- High during active reception
-        valid_o : out std_logic; -- Pulses high when a valid word is received
-        data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0) -- Received data word
+        clk_i      : in  std_logic;
+        rst_i      : in  std_logic;
+        rx_i       : in  std_logic; -- Synchronized serial input
+        ready_i    : in  std_logic; -- RX FIFO has space; the frame is dropped otherwise
+        baud_div_i : in  std_logic_vector(UART_BAUD_WIDTH-1 downto 0);
+        en_i       : in  std_logic; -- A frame in progress completes when cleared
+
+        busy_o  : out std_logic;
+        valid_o : out std_logic; -- One-cycle pulse per received word
+        data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0)
     );
 end entity uart_rx;
 
@@ -33,27 +33,25 @@ architecture rtl of uart_rx is
 
     type state is (RX_IDLE, RX_START, RX_DATA, RX_STOP, RX_WRITE);
 
-    signal state_reg : state; -- FSM current state
+    signal state_reg : state;
 
-    signal baud_cnt_sel_reg : std_logic; -- '0' for half-baud (start), '1' for full-baud
-    signal baud_cnt_en_reg  : std_logic; -- Baud rate counter enable
-    signal rx_data_en_reg   : std_logic; -- Data shift enable
-    signal valid_reg        : std_logic; -- Internal valid flag
-    
-    signal baud_div_reg  : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Baud divider held constant during a frame
-    signal baud_cnt_last : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Last count of a full bit period
-    signal baud_cnt_mux  : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Last count of the current period
-    signal baud_cnt_reg  : unsigned(UART_BAUD_WIDTH-1 downto 0); -- Clock cycle counter for bit timing
-    signal rx_cnt_reg    : integer range 0 to DATA_WIDTH-1; -- Received bit counter
+    signal baud_cnt_sel_reg : std_logic; -- '0' half bit period, '1' full bit period
+    signal baud_cnt_en_reg  : std_logic;
+    signal rx_data_en_reg   : std_logic;
+    signal valid_reg        : std_logic;
 
-    signal rx_data_reg  : std_logic_vector(DATA_WIDTH-1 downto 0); -- Shift register
-    
-    signal baud_cnt_done : std_logic; -- High when one bit period has elapsed
-    signal rx_cnt_done   : std_logic; -- High when all data bits are received
+    signal baud_div_reg  : unsigned(UART_BAUD_WIDTH-1 downto 0);
+    signal baud_cnt_last : unsigned(UART_BAUD_WIDTH-1 downto 0);
+    signal baud_cnt_mux  : unsigned(UART_BAUD_WIDTH-1 downto 0);
+    signal baud_cnt_reg  : unsigned(UART_BAUD_WIDTH-1 downto 0);
+    signal rx_cnt_reg    : integer range 0 to DATA_WIDTH-1;
+
+    signal rx_data_reg  : std_logic_vector(DATA_WIDTH-1 downto 0);
+
+    signal baud_cnt_done : std_logic;
+    signal rx_cnt_done   : std_logic;
 
 begin
-    
-    ----------------------- Control Logic (FSM) --------------------------
 
     fsm_proc: process(clk_i)
     begin
@@ -64,23 +62,23 @@ begin
                 baud_cnt_en_reg  <= '0';
                 baud_cnt_sel_reg <= '0';
                 rx_data_en_reg   <= '0';
-            else            
+            else
                 case state_reg is
                     when RX_IDLE =>
-                        if rx_i = '0' and en_i = '1' then -- Start bit detection
+                        if rx_i = '0' and en_i = '1' then
                             state_reg <= RX_START;
                             baud_cnt_en_reg <= '1';
                         end if;
 
                     when RX_START =>
                         if baud_cnt_done = '1' then
-                            if rx_i = '1' then -- Glitch detection
+                            if rx_i = '1' then -- Glitch, not a start bit
                                 state_reg        <= RX_IDLE;
                                 baud_cnt_en_reg  <= '0';
                                 baud_cnt_sel_reg <= '0';
-                            else -- Valid start bit, move to sampling data
+                            else
                                 state_reg        <= RX_DATA;
-                                baud_cnt_sel_reg <= '1'; -- Use full baud period
+                                baud_cnt_sel_reg <= '1';
                                 rx_data_en_reg   <= '1';
                             end if;
                         end if;
@@ -91,21 +89,21 @@ begin
                             rx_data_en_reg <= '0';
                         end if;
 
-                    when RX_STOP => 
+                    when RX_STOP =>
                         if baud_cnt_done = '1' then
-                            if rx_i = '1' and ready_i = '1' then -- Valid stop bit and space in FIFO
+                            if rx_i = '1' and ready_i = '1' then
                                 state_reg        <= RX_WRITE;
                                 valid_reg        <= '1';
                                 baud_cnt_en_reg  <= '0';
                                 baud_cnt_sel_reg <= '0';
-                            else -- Framing error or FIFO full, discard frame
+                            else -- Framing error or FIFO full: discard the frame
                                 state_reg <= RX_IDLE;
                                 baud_cnt_en_reg <= '0';
                                 baud_cnt_sel_reg <= '0';
                             end if;
                         end if;
 
-                    when RX_WRITE => -- Wait state to pulse valid_o
+                    when RX_WRITE =>
                         state_reg        <= RX_IDLE;
                         valid_reg        <= '0';
                         baud_cnt_en_reg  <= '0';
@@ -115,9 +113,7 @@ begin
         end if;
     end process fsm_proc;
 
-    ----------------------- Datapath Logic -----------------------------
-
-    -- Baud divider snapshot: BRDV writes take effect at the next frame
+    -- BRDV writes take effect at the next frame
     baud_div_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -131,7 +127,6 @@ begin
 
     baud_cnt_last <= baud_div_reg - 1;
 
-    -- Mux to select between half-baud (for mid-bit alignment) and full-baud
     -- Half period is taken from baud_cnt_last so that BRDV = 1 still gives 1 cycle
     baud_cnt_mux_proc: process(baud_cnt_sel_reg, baud_cnt_last)
     begin
@@ -142,7 +137,6 @@ begin
         end if;
     end process baud_cnt_mux_proc;
 
-    -- Baud rate timing counter
     baud_cnt_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -160,7 +154,6 @@ begin
 
     baud_cnt_done <= '1' when baud_cnt_reg = baud_cnt_mux else '0';
 
-    -- Data bit counter
     rx_cnt_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -178,7 +171,6 @@ begin
 
     rx_cnt_done <= '1' when rx_cnt_reg = DATA_WIDTH-1 else '0';
 
-    -- Serial to Parallel shift register
     rx_shift_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -190,10 +182,8 @@ begin
         end if;
     end process rx_shift_proc;
 
-    ------------------------------ Outputs ------------------------------
-
     busy_o  <= baud_cnt_en_reg;
     valid_o <= valid_reg;
     data_o  <= rx_data_reg;
-    
+
 end architecture rtl;
