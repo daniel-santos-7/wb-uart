@@ -45,22 +45,22 @@ end entity uart;
 
 architecture rtl of uart is
 
-    -- Internal state signals
-    signal rx_synced : std_logic; -- RX input synchronized to clk_i
+    -- rx_sync_inst outputs
+    signal rx_sync_inst_rx : std_logic; -- RX input synchronized to clk_i
 
-    -- RX Path internal signals
-    signal rx_data_valid     : std_logic;
-    signal rx_data           : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal rx_fifo_not_full  : std_logic;
-    signal rx_fifo_valid     : std_logic;
-    signal rx_busy           : std_logic;
+    -- RX path instance outputs
+    signal rx_fifo_inst_valid  : std_logic;
+    signal rx_fifo_inst_ready  : std_logic;
+    signal receiver_inst_busy  : std_logic;
+    signal receiver_inst_valid : std_logic;
+    signal receiver_inst_data  : std_logic_vector(DATA_WIDTH-1 downto 0);
 
-    -- TX Path internal signals
-    signal tx_fifo_not_full  : std_logic;
-    signal tx_fifo_valid     : std_logic;
-    signal tx_fifo_data      : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal tx_ready          : std_logic;
-    signal tx_busy           : std_logic;
+    -- TX path instance outputs
+    signal tx_fifo_inst_valid     : std_logic;
+    signal tx_fifo_inst_ready     : std_logic;
+    signal tx_fifo_inst_data      : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal transmitter_inst_ready : std_logic;
+    signal transmitter_inst_busy  : std_logic;
 
 begin
 
@@ -74,7 +74,7 @@ begin
         clk_i => clk_i,
         rst_i => rst_i,
         rx_i  => rx_i,
-        rx_o  => rx_synced
+        rx_o  => rx_sync_inst_rx
     );
 
     ----------------------- Datapath Logic (RX Path) ---------------------
@@ -86,11 +86,11 @@ begin
     ) port map (
         clk_i   => clk_i,
         rst_i   => rst_i,
-        valid_i => rx_data_valid,
+        valid_i => receiver_inst_valid,
         ready_i => ready_i,
-        data_i  => rx_data,
-        valid_o => rx_fifo_valid,
-        ready_o => rx_fifo_not_full,
+        data_i  => receiver_inst_data,
+        valid_o => rx_fifo_inst_valid,
+        ready_o => rx_fifo_inst_ready,
         data_o  => data_o
     );
 
@@ -100,13 +100,13 @@ begin
     ) port map (
         clk_i      => clk_i,
         rst_i      => rst_i,
-        rx_i       => rx_synced, -- Stable synchronized signal
-        ready_i    => rx_fifo_not_full,
+        rx_i       => rx_sync_inst_rx, -- Stable synchronized signal
+        ready_i    => rx_fifo_inst_ready,
         baud_div_i => baud_div_i,
         en_i       => en_i,
-        busy_o     => rx_busy,
-        valid_o    => rx_data_valid,
-        data_o     => rx_data
+        busy_o     => receiver_inst_busy,
+        valid_o    => receiver_inst_valid,
+        data_o     => receiver_inst_data
     );
 
     ----------------------- Datapath Logic (TX Path) ---------------------
@@ -119,11 +119,11 @@ begin
         clk_i   => clk_i,
         rst_i   => rst_i,
         valid_i => valid_i,
-        ready_i => tx_ready,
+        ready_i => transmitter_inst_ready,
         data_i  => data_i,
-        valid_o => tx_fifo_valid,
-        ready_o => tx_fifo_not_full,
-        data_o  => tx_fifo_data
+        valid_o => tx_fifo_inst_valid,
+        ready_o => tx_fifo_inst_ready,
+        data_o  => tx_fifo_inst_data
     );
 
     -- Serializer engine
@@ -134,20 +134,20 @@ begin
         rst_i      => rst_i,
         baud_div_i => baud_div_i,
         en_i       => en_i,
-        ready_o    => tx_ready,
-        busy_o     => tx_busy,
-        valid_i    => tx_fifo_valid,
-        data_i     => tx_fifo_data,
+        ready_o    => transmitter_inst_ready,
+        busy_o     => transmitter_inst_busy,
+        valid_i    => tx_fifo_inst_valid,
+        data_i     => tx_fifo_inst_data,
         tx_o       => tx_o
     );
 
     ------------------------------ Status Outputs ------------------------
 
-    tx_not_full_o <= tx_fifo_not_full;
-    rx_not_full_o <= rx_fifo_not_full;
-    tx_valid_o    <= tx_fifo_valid;
-    rx_valid_o    <= rx_fifo_valid;
-    tx_busy_o     <= tx_busy;
-    rx_busy_o     <= rx_busy;
+    tx_not_full_o <= tx_fifo_inst_ready;
+    rx_not_full_o <= rx_fifo_inst_ready;
+    tx_valid_o    <= tx_fifo_inst_valid;
+    rx_valid_o    <= rx_fifo_inst_valid;
+    tx_busy_o     <= transmitter_inst_busy;
+    rx_busy_o     <= receiver_inst_busy;
 
 end architecture rtl;

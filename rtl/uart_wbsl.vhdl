@@ -37,20 +37,21 @@ end entity uart_wbsl;
 
 architecture rtl of uart_wbsl is
 
-    signal baud_div : std_logic_vector(15 downto 0);
-    signal en       : std_logic;
+    -- csrs_inst outputs
+    signal csrs_inst_baud_div : std_logic_vector(15 downto 0);
+    signal csrs_inst_en       : std_logic;
+    signal csrs_inst_tx_valid : std_logic;
+    signal csrs_inst_tx_data  : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal csrs_inst_rx_ready : std_logic;
 
-    signal tx_not_full : std_logic;
-    signal rx_not_full : std_logic;
-    signal tx_valid    : std_logic;
-    signal rx_valid    : std_logic;
-    signal tx_busy     : std_logic;
-    signal rx_busy     : std_logic;
-
-    signal tx_fifo_valid : std_logic;
-    signal tx_fifo_data  : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal rx_fifo_ready : std_logic;
-    signal rx_fifo_data  : std_logic_vector(DATA_WIDTH-1 downto 0);
+    -- uart_inst outputs
+    signal uart_inst_tx_not_full : std_logic;
+    signal uart_inst_rx_not_full : std_logic;
+    signal uart_inst_tx_valid    : std_logic;
+    signal uart_inst_rx_valid    : std_logic;
+    signal uart_inst_tx_busy     : std_logic;
+    signal uart_inst_rx_busy     : std_logic;
+    signal uart_inst_data        : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 begin
 
@@ -72,20 +73,20 @@ begin
         ack_o   => ack_o,
         stall_o => stall_o,
 
-        baud_div_o => baud_div,
-        en_o       => en,
+        baud_div_o => csrs_inst_baud_div,
+        en_o       => csrs_inst_en,
         
-        tx_not_full_i => tx_not_full,
-        rx_not_full_i => rx_not_full,
-        tx_valid_i    => tx_valid,
-        rx_valid_i    => rx_valid,
-        tx_busy_i     => tx_busy,
-        rx_busy_i     => rx_busy,
+        tx_not_full_i => uart_inst_tx_not_full,
+        rx_not_full_i => uart_inst_rx_not_full,
+        tx_valid_i    => uart_inst_tx_valid,
+        rx_valid_i    => uart_inst_rx_valid,
+        tx_busy_i     => uart_inst_tx_busy,
+        rx_busy_i     => uart_inst_rx_busy,
         
-        tx_valid_o => tx_fifo_valid,
-        tx_data_o  => tx_fifo_data,
-        rx_ready_o => rx_fifo_ready,
-        rx_data_i  => rx_fifo_data
+        tx_valid_o => csrs_inst_tx_valid,
+        tx_data_o  => csrs_inst_tx_data,
+        rx_ready_o => csrs_inst_rx_ready,
+        rx_data_i  => uart_inst_data
     );
 
     ----------------------- Datapath Logic (Functional Core) ---------------
@@ -96,18 +97,18 @@ begin
     ) port map (
         clk_i         => clk_i,
         rst_i         => rst_i,
-        baud_div_i    => baud_div,
-        en_i          => en,
-        tx_not_full_o => tx_not_full,
-        rx_not_full_o => rx_not_full,
-        tx_valid_o    => tx_valid,
-        rx_valid_o    => rx_valid,
-        tx_busy_o     => tx_busy,
-        rx_busy_o     => rx_busy,
-        valid_i       => tx_fifo_valid,
-        data_i        => tx_fifo_data,
-        ready_i       => rx_fifo_ready,
-        data_o        => rx_fifo_data,
+        baud_div_i    => csrs_inst_baud_div,
+        en_i          => csrs_inst_en,
+        tx_not_full_o => uart_inst_tx_not_full,
+        rx_not_full_o => uart_inst_rx_not_full,
+        tx_valid_o    => uart_inst_tx_valid,
+        rx_valid_o    => uart_inst_rx_valid,
+        tx_busy_o     => uart_inst_tx_busy,
+        rx_busy_o     => uart_inst_rx_busy,
+        valid_i       => csrs_inst_tx_valid,
+        data_i        => csrs_inst_tx_data,
+        ready_i       => csrs_inst_rx_ready,
+        data_o        => uart_inst_data,
         rx_i          => rx_i,
         tx_o          => tx_o
     );
