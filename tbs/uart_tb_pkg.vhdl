@@ -90,7 +90,7 @@ package body uart_tb_pkg is
     begin
         tx <= '0';
         wait for baud;
-        for i in data'low to data'high loop
+        for i in data'reverse_range loop -- LSB (rightmost bit) first
             tx <= data(i);
             wait for baud;
         end loop;
@@ -106,7 +106,7 @@ package body uart_tb_pkg is
     begin
         wait until rx = '0';
         wait for baud/2;
-        for i in data'low to data'high loop
+        for i in data'reverse_range loop -- LSB (rightmost bit) first
             wait for baud;
             data(i) := rx;
         end loop;
