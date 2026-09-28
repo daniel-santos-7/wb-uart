@@ -51,6 +51,9 @@ end entity uart_csrs;
 
 architecture rtl of uart_csrs is
 
+    constant TX_SEL_MSB : natural := (DATA_WIDTH-1)/8; -- Last byte lane of a TXRX word
+    constant TX_SEL_ALL : std_logic_vector(TX_SEL_MSB downto 0) := (others => '1');
+
     signal baud_div_reg : std_logic_vector(UART_BAUD_WIDTH-1 downto 0);
 
     signal rd_en : std_logic;
@@ -127,7 +130,7 @@ begin
     en_o       <= '0' when baud_div_reg = BRDV_OFF else '1';
     dat_o      <= dat_reg;
     tx_data_o  <= dat_i(DATA_WIDTH-1 downto 0);
-    tx_valid_o <= '1' when wr_en = '1' and adr_i = ADDR_TXRX and sel_i(0) = '1' else '0';
+    tx_valid_o <= '1' when wr_en = '1' and adr_i = ADDR_TXRX and sel_i(TX_SEL_MSB downto 0) = TX_SEL_ALL else '0';
     rx_ready_o <= '1' when rd_en = '1' and adr_i = ADDR_TXRX else '0';
 
 end architecture rtl;

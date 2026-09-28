@@ -142,6 +142,11 @@ begin
         -- TXRX write without sel(0) is ignored: nothing is queued
         wb_write(b"11", x"000000EE", clk_i, wb_bus, "1110");
         wb_check(b"00", x"00000030", clk_i, wb_bus); -- TX_READY, RX_READY, TX FIFO empty
+        -- Wider words need every lane they cover: a partial write is ignored
+        if DATA_WIDTH > 8 then
+            wb_write(b"11", x"0000FFEE", clk_i, wb_bus, "0001");
+            wb_check(b"00", x"00000030", clk_i, wb_bus);
+        end if;
 
         uart_transmit(rx_i, to_word(x"A5"));
         wb_write(b"11", to_bus(x"5A"), clk_i, wb_bus);
