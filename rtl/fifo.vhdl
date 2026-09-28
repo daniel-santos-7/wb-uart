@@ -13,22 +13,20 @@ use work.uart_pkg.all;
 
 entity fifo is
     generic (
-        FIFO_DEPTH : natural := 8; -- Number of slots in the FIFO
-        DATA_WIDTH : natural := 8  -- Width of each data slot
+        FIFO_DEPTH : positive := 8;
+        DATA_WIDTH : positive := 8
     );
     port (
-        clk_i : in  std_logic; -- System clock
-        rst_i : in  std_logic; -- Synchronous reset (active high)
+        clk_i : in  std_logic;
+        rst_i : in  std_logic;
 
-        -- Input Interface
-        valid_i : in  std_logic; -- Input data is valid (push)
-        ready_i : in  std_logic; -- Downstream is ready (pop enable)
-        data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0); -- Data to be stored
+        valid_i : in  std_logic; -- Push
+        ready_i : in  std_logic; -- Pop
+        data_i  : in  std_logic_vector(DATA_WIDTH-1 downto 0);
 
-        -- Output Interface
-        valid_o : out std_logic; -- FIFO is not empty (data available)
-        ready_o : out std_logic; -- FIFO is not full (ready to accept data)
-        data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0)  -- Data at current read pointer
+        valid_o : out std_logic; -- Not empty
+        ready_o : out std_logic; -- Not full
+        data_o  : out std_logic_vector(DATA_WIDTH-1 downto 0) -- Head, combinational
     );
 end entity fifo;
 
@@ -38,23 +36,21 @@ architecture rtl of fifo is
 
     type fifo_data_array is array (0 to FIFO_DEPTH-1) of std_logic_vector(DATA_WIDTH-1 downto 0);
 
-    signal fifo_data_reg : fifo_data_array; -- Memory array
+    signal fifo_data_reg : fifo_data_array;
 
-    signal wr_ptr_reg : unsigned(ADDR_WIDTH-1 downto 0); -- Write address pointer
-    signal rd_ptr_reg : unsigned(ADDR_WIDTH-1 downto 0); -- Read address pointer
-    
-    signal wr_ptr_next : unsigned(ADDR_WIDTH-1 downto 0); -- Next write address
-    signal rd_ptr_next : unsigned(ADDR_WIDTH-1 downto 0); -- Next read address
+    signal wr_ptr_reg : unsigned(ADDR_WIDTH-1 downto 0);
+    signal rd_ptr_reg : unsigned(ADDR_WIDTH-1 downto 0);
 
-    signal empty_reg : std_logic; -- Registered empty flag
-    signal full_reg  : std_logic; -- Registered full flag
+    signal wr_ptr_next : unsigned(ADDR_WIDTH-1 downto 0);
+    signal rd_ptr_next : unsigned(ADDR_WIDTH-1 downto 0);
+
+    signal empty_reg : std_logic;
+    signal full_reg  : std_logic;
 
     signal pushing : std_logic;
     signal popping : std_logic;
 
 begin
-
-    ----------------------- Internal Control Signals ---------------------
 
     pushing <= valid_i and not full_reg;
     popping <= ready_i and not empty_reg;
@@ -62,9 +58,6 @@ begin
     wr_ptr_next <= (others => '0') when wr_ptr_reg = FIFO_DEPTH - 1 else wr_ptr_reg + 1;
     rd_ptr_next <= (others => '0') when rd_ptr_reg = FIFO_DEPTH - 1 else rd_ptr_reg + 1;
 
-    ----------------------- Datapath Logic -----------------------------
-
-    -- Process 1: Memory Write (Dedicated to RAM inference)
     memory_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -74,12 +67,8 @@ begin
         end if;
     end process memory_proc;
 
-    -- Combinational data output
     data_o <= fifo_data_reg(to_integer(rd_ptr_reg));
 
-    ----------------------- Control Logic ----------------------------
-
-    -- Process 2: Write Pointer Management
     write_pointer_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -91,7 +80,6 @@ begin
         end if;
     end process write_pointer_proc;
 
-    -- Process 3: Read Pointer Management
     read_pointer_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
@@ -103,13 +91,13 @@ begin
         end if;
     end process read_pointer_proc;
 
-    -- Process 4: Status Logic (Optimized, no counter)
+    -- Full/empty flags without an occupancy counter; a simultaneous push and pop keeps both
     status_proc: process(clk_i)
     begin
         if rising_edge(clk_i) then
             if rst_i = '1' then
-                empty_reg    <= '1';
-                full_reg     <= '0';
+                empty_reg <= '1';
+                full_reg  <= '0';
             else
                 if pushing = '1' and popping = '0' then
                     empty_reg <= '0';
@@ -122,12 +110,9 @@ begin
                         empty_reg <= '1';
                     end if;
                 end if;
-                -- Simultaneous push/pop: distance remains constant, no change to flags
             end if;
         end if;
     end process status_proc;
-
-    ------------------------------ Outputs ------------------------------
 
     valid_o <= not empty_reg;
     ready_o <= not full_reg;

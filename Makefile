@@ -1,6 +1,6 @@
 # VHDL simulator
 GHDL = ghdl
-GHDLFLAGS = --workdir=$(WORKDIR) --ieee=synopsys
+GHDLFLAGS = --workdir=$(WORKDIR)
 GHDLXOPTS = --ieee-asserts=disable --stop-time=10ms
 
 WORKDIR  = work
@@ -10,10 +10,11 @@ SYNDIR   = syn
 # RTL files in dependency order
 RTL_SRC = \
 	./rtl/uart_pkg.vhdl \
+	./rtl/rx_sync.vhdl \
 	./rtl/fifo.vhdl \
-	./rtl/uart_csrs.vhdl \
-	./rtl/uart_rx.vhdl \
 	./rtl/uart_tx.vhdl \
+	./rtl/uart_rx.vhdl \
+	./rtl/uart_csrs.vhdl \
 	./rtl/uart.vhdl \
 	./rtl/uart_wbsl.vhdl
 
@@ -23,6 +24,9 @@ TBS_SRC = \
 
 TOP_TB    = uart_tb
 TOP_SYNTH = uart_wbsl
+
+# Testbench data width, e.g. make simulation DATA_WIDTH=7
+DATA_WIDTH ?= 8
 
 $(WORKDIR) $(WAVESDIR) $(SYNDIR):
 	@mkdir -p $@
@@ -40,7 +44,8 @@ $(WAVESDIR)/$(TOP_TB).ghw: .make | $(WAVESDIR)
 
 .PHONY: simulation clean synthesis
 simulation: .make
-	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS)
+	@echo "Running simulation ($(DATA_WIDTH)-bit data)..."
+	@$(GHDL) -r $(GHDLFLAGS) $(TOP_TB) $(GHDLXOPTS) -gDATA_WIDTH=$(DATA_WIDTH)
 
 synthesis: .analyze | $(SYNDIR)
 	@$(GHDL) --synth $(GHDLFLAGS) --out=verilog $(TOP_SYNTH) > $(SYNDIR)/$(TOP_SYNTH).v
