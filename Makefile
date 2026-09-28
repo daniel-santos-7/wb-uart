@@ -1,6 +1,6 @@
 # VHDL simulator
 GHDL = ghdl
-GHDLFLAGS = --workdir=$(WORKDIR) --ieee=synopsys
+GHDLFLAGS = --workdir=$(WORKDIR)
 GHDLXOPTS = --ieee-asserts=disable --stop-time=10ms
 
 WORKDIR  = work
