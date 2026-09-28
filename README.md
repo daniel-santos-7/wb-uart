@@ -17,7 +17,7 @@ A simple and robust, synthesizable UART (Universal Asynchronous Receiver-Transmi
   - Mid-bit sampling for start-bit validation and noise immunity.
   - Automatic discard of frames with stop-bit errors.
 - **Timing-Optimized Design:** Registered FSM control signals decouple state decoding from the datapath.
-- **Clean Architecture:** Fully synchronous reset design optimized for modern FPGAs.
+- **Clean Architecture:** Fully synchronous reset design with no vendor-specific primitives or attributes, portable to FPGA and ASIC flows.
 
 ## Register Map
 
