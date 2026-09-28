@@ -3,6 +3,7 @@
 -- developed by: Daniel Santos
 -- module: uart_tb_pkg
 -- description: simulation helper procedures and models
+-- license: MIT
 ----------------------------------------------------------------------
 
 library IEEE;
@@ -13,13 +14,9 @@ package uart_tb_pkg is
 
     constant CLK_PERIOD : time := 20 ns;
 
-    constant UART_9600_BAUD_RATE_PERIOD : time := 104160 ns;
-
     constant UART_115200_BAUD_RATE_PERIOD : time := 8680 ns;
 
     constant UART_230400_BAUD_RATE_PERIOD : time := 4340 ns;
-
-    constant UART_9600_BAUD_RATE_DIVIDER : unsigned(31 downto 0) := to_unsigned(UART_9600_BAUD_RATE_PERIOD/CLK_PERIOD, 32);
 
     constant UART_115200_BAUD_RATE_DIVIDER : unsigned(31 downto 0) := to_unsigned(UART_115200_BAUD_RATE_PERIOD/CLK_PERIOD, 32);
 

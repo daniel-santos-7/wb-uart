@@ -3,6 +3,7 @@
 -- developed by: Daniel Santos
 -- module: uart_tb
 -- description: system-level testbench
+-- license: MIT
 ----------------------------------------------------------------------
 
 library IEEE;
