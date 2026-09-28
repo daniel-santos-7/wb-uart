@@ -85,7 +85,11 @@ begin
     begin
         clk_en <= '1';
         -- Written while BRDV = 0, sent once BRDV is configured (issue #3)
-        uart_expect(tx_o, to_word(x"5A"));
+        if DATA_WIDTH = 8 then
+            uart_expect(tx_o, x"4B"); -- Literal: ascending range (issue #10)
+        else
+            uart_expect(tx_o, to_word(x"4B"));
+        end if;
         -- First frame keeps the old rate; BRDV is lowered mid-frame (issue #2)
         uart_expect(tx_o, to_word(test_data(0)));
         uart_expect(tx_o, to_word(test_data(1)), UART_230400_BAUD_RATE_PERIOD);
@@ -150,7 +154,7 @@ begin
         end if;
 
         uart_transmit(rx_i, to_word(x"A5"));
-        wb_write(b"11", to_bus(x"5A"), clk_i, wb_bus);
+        wb_write(b"11", to_bus(x"4B"), clk_i, wb_bus);
         wait for 100 * CLK_PERIOD;
         wb_check(b"00", x"00000038", clk_i, wb_bus); -- TX_READY, RX_READY, TX_VALID
 
@@ -166,6 +170,10 @@ begin
         for i in test_data'range loop
             wb_check(b"11", to_bus(test_data(i)), clk_i, wb_bus);
         end loop;
+        if DATA_WIDTH = 8 then
+            uart_transmit(rx_i, x"4A"); -- Literal: ascending range (issue #10)
+            wb_check(b"11", x"0000004A", clk_i, wb_bus);
+        end if;
 
         -- Write data via Wishbone (to be checked by uart_rx_proc)
         for i in test_data'range loop
